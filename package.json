@@ -1,0 +1,18 @@
+{
+  "name": "flap-with-friends",
+  "version": "1.0.0",
+  "description": "A simple multiplayer Flappy Bird clone",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "socket.io": "^4.8.1"
+  },
+  "engines": {
+    "node": "16.x"
+  },
+  "author": "",
+  "license": "GNU GPLv3"
+}

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flap with Friends Chat</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="container">
+    <div id="game">
+      <canvas id="gameCanvas" width="400" height="400"></canvas>
+    </div>
+    <div id="chat">
+      <div id="messages"></div>
+      <form id="chatForm">
+        <input id="input" autocomplete="off" placeholder="Type 'up' or 'u' to flap!">
+        <button>Send</button>
+      </form>
+      <button id="restart">Restart Game</button>
+    </div>
+  </div>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
