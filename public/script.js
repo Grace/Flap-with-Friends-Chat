@@ -4,12 +4,14 @@ const ctx = canvas.getContext("2d");
 
 let bird = { x: 50, y: 200, alive: true }; // Bird state
 let pipes = []; // Pipes array
-let score = 0;
+let score = 0; // Game score
 
 // Chat input form
 const chatForm = document.getElementById("chatForm");
 const input = document.getElementById("input");
 const messages = document.getElementById("messages");
+const userCountDisplay = document.createElement('div');
+document.getElementById('chat').appendChild(userCountDisplay);
 
 // Handle chat messages
 chatForm.addEventListener("submit", (e) => {
@@ -25,10 +27,10 @@ document.getElementById("restart").addEventListener("click", () => {
   socket.emit("restart");
 });
 
-// Display chat messages
-socket.on("chat message", (msg) => {
+// Display chat messages with usernames
+socket.on("chat message", (data) => {
   const item = document.createElement("div");
-  item.textContent = msg;
+  item.textContent = `${data.username}: ${data.message}`;
   messages.appendChild(item);
   messages.scrollTop = messages.scrollHeight; // Auto-scroll to bottom
 });
@@ -38,6 +40,11 @@ socket.on("game state", (state) => {
   bird = state.bird;
   pipes = state.pipes;
   score = state.score;
+});
+
+// Update user count
+socket.on("user count", (count) => {
+  userCountDisplay.textContent = `Users online: ${count}`;
 });
 
 // Draw game

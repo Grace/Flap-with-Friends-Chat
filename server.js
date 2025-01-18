@@ -9,6 +9,16 @@ const io = new Server(server);
 let bird = { x: 50, y: 200, velocity: 0, alive: true }; // Bird state
 let pipes = []; // Pipes array
 let score = 0; // Game score
+let users = 0; // Track the number of connected users
+
+// Function to generate a random username
+function generateUsername() {
+  const adjectives = ["Speedy", "Fluffy", "Mighty", "Clever", "Bouncy"];
+  const animals = ["Falcon", "Rabbit", "Tiger", "Penguin", "Monkey"];
+  const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+  const randomAnimal = animals[Math.floor(Math.random() * animals.length)];
+  return `${randomAdjective} ${randomAnimal}`;
+}
 
 // Initialize the game
 function resetGame() {
@@ -64,10 +74,22 @@ setInterval(() => {
 
 // Handle WebSocket connections
 io.on("connection", (socket) => {
+  users++; // Increment user count
   console.log("A user connected");
   socket.emit("game state", { bird, pipes, score });
 
+  // Generate a random username for the user
+  const username = generateUsername();
+
+  // Emit the current user count to all clients
+  io.emit("user count", users);
+
   socket.on("chat message", (msg) => {
+    console.log(`${username}: ${msg}`);
+    // Emit chat message and username to all clients
+    io.emit("chat message", { username, message: msg });
+
+    // Handle 'up' or 'u' for bird control
     if (bird.alive && (msg === "up" || msg === "u")) {
       bird.velocity = -10; // Bird flaps upward
     }
@@ -78,7 +100,10 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", () => {
+    users--; // Decrement user count
     console.log("A user disconnected");
+    // Emit updated user count to all clients
+    io.emit("user count", users);
   });
 });
 
