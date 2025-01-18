@@ -47,7 +47,11 @@ socket.on("user count", (count) => {
   userCountDisplay.textContent = `Users online: ${count}`;
 });
 
-// Draw game
+// Track the bounds of the "Game Over!" and "Click Restart Game" texts
+let gameOverBounds = null;
+let restartBounds = null;
+
+// Draw game-over message
 function drawGame() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -70,8 +74,28 @@ function drawGame() {
   // Draw game-over message
   if (!bird.alive) {
     ctx.fillStyle = "red";
+
+    // Draw "Game Over!" with 30px font
     ctx.font = "30px Arial";
-    ctx.fillText("Game Over!", 120, 200);
+    const gameOverText = "Game Over!";
+    const gameOverWidth = ctx.measureText(gameOverText).width;
+    const gameOverX = (canvas.width - gameOverWidth) / 2; // Center horizontally
+    const gameOverY = canvas.height / 2 - 15; // Position slightly above center
+    ctx.fillText(gameOverText, gameOverX, gameOverY);
+
+    // Track bounds for "Game Over!"
+    gameOverBounds = { x: gameOverX, y: gameOverY - 30, width: gameOverWidth, height: 30 };
+
+    // Draw "Click Restart Game" with 24px font
+    ctx.font = "24px Arial";
+    const restartText = "Click Restart Game";
+    const restartWidth = ctx.measureText(restartText).width;
+    const restartX = (canvas.width - restartWidth) / 2; // Center horizontally
+    const restartY = gameOverY + 30; // Position below "Game Over!"
+    ctx.fillText(restartText, restartX, restartY);
+
+    // Track bounds for "Click Restart Game"
+    restartBounds = { x: restartX, y: restartY - 24, width: restartWidth, height: 24 };
   }
 
   requestAnimationFrame(drawGame);
