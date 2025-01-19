@@ -15,3 +15,4 @@ Demo: https://flap-with-friends-chat-production.up.railway.app/
 - [ ] Add game music
 - [ ] Add sound effects
 - [ ] Improve UI/UX
+- [ ] Increase horizontal acceleration over time
