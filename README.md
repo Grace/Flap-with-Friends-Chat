@@ -8,3 +8,10 @@ A silly Flappy Bird clone where multiple clients can control the bird via chat c
 Press "Restart Game" when the page loads and type "u" or "up" to make the bird go up higher.
 
 Demo: https://flap-with-friends-chat-production.up.railway.app/
+
+## Extra Goals:
+[ ] - Add pixel art
+[ ] - Add game music
+[ ] - Add sound effects
+[ ] - Improve UI/UX
+[ ] - Make mobile friendly
