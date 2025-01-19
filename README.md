@@ -12,6 +12,6 @@ Demo: https://flap-with-friends-chat-production.up.railway.app/
 ## Extra Goals:
 - [ ] Make mobile friendly
 - [ ] Add pixel art
-- [ ]Add game music
+- [ ] Add game music
 - [ ] Add sound effects
 - [ ] Improve UI/UX
