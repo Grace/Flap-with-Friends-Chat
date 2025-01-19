@@ -10,8 +10,8 @@ Press "Restart Game" when the page loads and type "u" or "up" to make the bird g
 Demo: https://flap-with-friends-chat-production.up.railway.app/
 
 ## Extra Goals:
-[ ] - Add pixel art
-[ ] - Add game music
-[ ] - Add sound effects
-[ ] - Improve UI/UX
-[ ] - Make mobile friendly
+- [ ] Make mobile friendly
+- [ ] Add pixel art
+- [ ]Add game music
+- [ ] Add sound effects
+- [ ] Improve UI/UX
