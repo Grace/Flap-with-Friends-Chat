@@ -75,7 +75,6 @@ setInterval(() => {
 // Handle WebSocket connections
 io.on("connection", (socket) => {
   users++; // Increment user count
-  console.log("A user connected");
   socket.emit("game state", { bird, pipes, score });
 
   // Generate a random username for the user
@@ -85,7 +84,6 @@ io.on("connection", (socket) => {
   io.emit("user count", users);
 
   socket.on("chat message", (msg) => {
-    console.log(`${username}: ${msg}`);
     // Emit chat message and username to all clients
     io.emit("chat message", { username, message: msg });
 

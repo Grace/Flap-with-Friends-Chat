@@ -95,25 +95,52 @@ canvas {
 
 @media (max-width: 768px) {
   #container {
-      grid-template-columns: 1fr;
-      grid-template-rows: minmax(0, 2fr) minmax(0, 1fr);
-      height: 100vh;
-      padding: 0.5rem;
-      gap: 0.5rem;
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1.5fr) minmax(0, 1fr); /* Changed ratio */
+    height: 100vh;
+    padding: 0.5rem;
+    gap: 0.5rem;
   }
 
   #game {
-      aspect-ratio: auto;
+    aspect-ratio: auto;
+    min-height: 40vh;
+  }
+
+  #chatSection {
+    min-height: 45vh;
+  }
+
+  #chat {
+    padding: 0.5rem;
+    gap: 0.5rem;
+  }
+
+  #messages {
+    flex: 2; /* Increased relative size */
+    font-size: 0.7rem;
+    line-height: 1.2;
+    padding: 0.25rem;
   }
 
   #chatForm {
-      grid-template-columns: 1fr;
+    grid-template-columns: 1fr;
+    padding: 0.25rem;
+  }
+
+  #input {
+    height: 2.5rem;
   }
 }
 
 @media (orientation: landscape) and (max-width: 768px) {
   #container {
-      grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-      grid-template-rows: 1fr;
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    grid-template-rows: 1fr;
+  }
+
+  #chatSection {
+    min-height: 0;
+    height: 100%;
   }
 }
