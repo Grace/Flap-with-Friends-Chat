@@ -7,6 +7,18 @@
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <link href="https://unpkg.com/nes.css@latest/css/nes.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="styles.css">
+    <audio id="backgroundMusic" loop preload="auto">
+        <source src="sounds/background.mp3" type="audio/mp3">
+    </audio>
+    <audio id="flapSound" preload="auto">
+        <source src="sounds/flap.mp3" type="audio/mp3">
+    </audio>
+    <audio id="scoreSound" preload="auto">
+        <source src="sounds/score.mp3" type="audio/mp3">
+    </audio>
+    <audio id="gameOverSound" preload="auto">
+        <source src="sounds/gameover.mp3" type="audio/mp3">
+    </audio>
 </head>
 <body>
     <main id="container" class="nes-container" role="main">
@@ -50,6 +62,15 @@
                         class="nes-btn is-error" 
                         aria-label="Restart Game"
                     >Restart Game</button>
+                </div>
+                <div class="button-group" role="group" aria-label="Sound Controls">
+                    <button 
+                        id="toggleSound" 
+                        class="nes-btn" 
+                        aria-label="Toggle game sound"
+                    >
+                        <span id="soundIcon">🔊</span>
+                    </button>
                 </div>
             </div>
         </section>

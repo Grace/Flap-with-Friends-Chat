@@ -33,6 +33,129 @@ const BIRD_PARTS = {
     WING_DOWN_OFFSET: 0.5 // 50% from top of bird
 };
 
+// Add after other constants
+const SOUNDS = {
+    background: document.getElementById('backgroundMusic'),
+    flap: document.getElementById('flapSound'),
+    score: document.getElementById('scoreSound'),
+    gameOver: document.getElementById('gameOverSound')
+};
+
+// Add after other constants
+const MUSIC = {
+    context: null,
+    gainNode: null,
+    isPlaying: false,
+    tempo: 140, // Increased tempo
+    notes: {
+        C3: 130.81,
+        D3: 146.83,
+        E3: 164.81,
+        F3: 174.61,
+        G3: 196.00,
+        A3: 220.00,
+        B3: 246.94,
+        C4: 261.63,
+        D4: 293.66,
+        E4: 329.63,
+        F4: 349.23,
+        G4: 392.00,
+        A4: 440.00,
+        B4: 493.88,
+        C5: 523.25
+    },
+    noteLength: 150 // Shorter notes for bouncier feel
+};
+
+function initAudio() {
+    MUSIC.context = new (window.AudioContext || window.webkitAudioContext)();
+    MUSIC.gainNode = MUSIC.context.createGain();
+    MUSIC.gainNode.gain.value = 0.1; // Set volume
+    MUSIC.gainNode.connect(MUSIC.context.destination);
+}
+
+function createNoteEnvelope(startTime, duration) {
+    const envelope = MUSIC.context.createGain();
+    envelope.connect(MUSIC.gainNode);
+    envelope.gain.setValueAtTime(0, startTime);
+    envelope.gain.linearRampToValueAtTime(0.3, startTime + 0.01);
+    envelope.gain.linearRampToValueAtTime(0.2, startTime + duration * 0.3);
+    envelope.gain.linearRampToValueAtTime(0, startTime + duration);
+    return envelope;
+}
+
+function playNote(frequency, startTime, duration, type = 'square') {
+    const oscillator = MUSIC.context.createOscillator();
+    const envelope = createNoteEnvelope(startTime, duration);
+    
+    oscillator.type = type;
+    oscillator.frequency.value = frequency;
+    oscillator.connect(envelope);
+    oscillator.start(startTime);
+    oscillator.stop(startTime + duration);
+}
+
+function playMelody() {
+    if (!MUSIC.isPlaying) return;
+    
+    const now = MUSIC.context.currentTime;
+    const quarterNote = 60 / MUSIC.tempo;
+    
+    // Main cheerful melody
+    const melody = [
+        MUSIC.notes.E4, MUSIC.notes.G4, MUSIC.notes.E4, MUSIC.notes.C4,
+        MUSIC.notes.G4, MUSIC.notes.A4, MUSIC.notes.G4, MUSIC.notes.F4,
+        MUSIC.notes.E4, MUSIC.notes.C4, MUSIC.notes.D4, MUSIC.notes.E4,
+        MUSIC.notes.D4, MUSIC.notes.C4, MUSIC.notes.B3, MUSIC.notes.C4
+    ];
+    
+    // Bouncy arpeggio accompaniment
+    const arpeggio = [
+        MUSIC.notes.C4, MUSIC.notes.E4, MUSIC.notes.G4, MUSIC.notes.C5,
+        MUSIC.notes.G4, MUSIC.notes.E4, MUSIC.notes.C4, MUSIC.notes.E4,
+        MUSIC.notes.F3, MUSIC.notes.A3, MUSIC.notes.C4, MUSIC.notes.F4,
+        MUSIC.notes.G3, MUSIC.notes.B3, MUSIC.notes.D4, MUSIC.notes.G4
+    ];
+    
+    // Bass line
+    const bass = [
+        MUSIC.notes.C3, MUSIC.notes.G3, MUSIC.notes.F3, MUSIC.notes.G3,
+        MUSIC.notes.C3, MUSIC.notes.E3, MUSIC.notes.F3, MUSIC.notes.G3
+    ];
+    
+    // Play main melody with square wave
+    melody.forEach((note, i) => {
+        playNote(note, now + i * quarterNote, quarterNote * 0.8, 'square');
+    });
+    
+    // Play arpeggios with softer square wave
+    arpeggio.forEach((note, i) => {
+        const envelope = createNoteEnvelope(now + i * quarterNote/2, quarterNote/2);
+        envelope.gain.setValueAtTime(0.05, now + i * quarterNote/2);
+        playNote(note, now + i * quarterNote/2, quarterNote/2, 'square');
+    });
+    
+    // Play bass with triangle wave
+    bass.forEach((note, i) => {
+        playNote(note, now + i * quarterNote * 2, quarterNote * 1.6, 'triangle');
+    });
+    
+    // Schedule next loop
+    setTimeout(() => playMelody(), melody.length * quarterNote * 1000);
+}
+
+function startMusic() {
+    if (!MUSIC.context) initAudio();
+    MUSIC.isPlaying = true;
+    playMelody();
+}
+
+function stopMusic() {
+    MUSIC.isPlaying = false;
+}
+
+let isSoundEnabled = true;
+
 let bird = {
     xPercent: INITIAL_BIRD_X_PERCENT,
     yPercent: INITIAL_BIRD_Y_PERCENT,
@@ -95,6 +218,17 @@ socket.on("game state", (state) => {
         x: pipe.x,
         gapY: pipe.gapY
     }));
+    // Handle score change
+    if (state.score > score && isSoundEnabled) {
+        SOUNDS.score.currentTime = 0;
+        SOUNDS.score.play();
+    }
+    
+    // Handle game over
+    if (state.bird.alive !== bird.alive && !state.bird.alive && isSoundEnabled) {
+        SOUNDS.gameOver.play();
+        SOUNDS.background.pause();
+    }
     score = state.score;
 });
 
@@ -300,8 +434,36 @@ window.addEventListener('orientationchange', () => {
 // Add after other event listeners
 document.getElementById("flap").addEventListener("click", (e) => {
     e.preventDefault();
+    if (isSoundEnabled) {
+        SOUNDS.flap.currentTime = 0;
+        SOUNDS.flap.play();
+    }
     socket.emit("chat message", "flap");
 });
+
+// Add sound control functions
+function toggleSound() {
+    isSoundEnabled = !isSoundEnabled;
+    document.getElementById('soundIcon').textContent = isSoundEnabled ? '🔊' : '🔇';
+    if (!isSoundEnabled) {
+        SOUNDS.background.pause();
+        stopMusic();
+    } else {
+        SOUNDS.background.play();
+        startMusic();
+    }
+}
+
+// Add sound event listeners
+document.getElementById('toggleSound').addEventListener('click', toggleSound);
+
+// Start background music on first interaction
+document.addEventListener('click', () => {
+    if (isSoundEnabled && SOUNDS.background.paused) {
+        SOUNDS.background.play();
+    }
+    if (isSoundEnabled) startMusic();
+}, { once: true });
 
 drawGame();
 
