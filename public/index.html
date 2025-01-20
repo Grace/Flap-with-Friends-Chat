@@ -1,26 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Flappy Bird with Friends</title>
-  <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Flappy Bird with Friends</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link href="https://unpkg.com/nes.css@latest/css/nes.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div id="container">
-    <div id="game">
-      <canvas id="gameCanvas" width="400" height="400"></canvas>
+    <div id="container" class="nes-container">
+        <div id="gameSection">
+            <div id="game" class="nes-container is-dark">
+                <canvas id="gameCanvas"></canvas>
+            </div>
+        </div>
+        <div id="chatSection">
+            <div id="chat" class="nes-container">
+                <div id="messages" class="nes-container"></div>
+                <form id="chatForm">
+                    <input id="input" class="nes-input" autocomplete="off" placeholder="Type 'up' or 'u' to flap!">
+                    <button class="nes-btn is-primary">Send</button>
+                </form>
+                <button id="restart" class="nes-btn is-error">Restart Game</button>
+            </div>
+        </div>
     </div>
-    <div id="chat">
-      <div id="messages"></div>
-      <form id="chatForm">
-        <input id="input" autocomplete="off" placeholder="Type 'up' or 'u' to flap!">
-        <button>Send</button>
-      </form>
-      <button id="restart">Restart Game</button>
-    </div>
-  </div>
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="script.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>

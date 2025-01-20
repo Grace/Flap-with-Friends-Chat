@@ -55,51 +55,78 @@ let restartBounds = null;
 function drawGame() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Draw bird
-  ctx.fillStyle = bird.alive ? "yellow" : "gray";
-  ctx.fillRect(bird.x, bird.y, 20, 20);
+  // Draw pixelated bird
+  ctx.fillStyle = bird.alive ? "#ffd33d" : "#666";
+  ctx.fillRect(bird.x, bird.y, 24, 24);
+  // Bird eye
+  ctx.fillStyle = "#000";
+  ctx.fillRect(bird.x + 18, bird.y + 6, 4, 4);
 
-  // Draw pipes
-  ctx.fillStyle = "green";
+  // Draw pipes with pixel art style
+  ctx.fillStyle = "#58b368";
   pipes.forEach((pipe) => {
-    ctx.fillRect(pipe.x, 0, 50, pipe.gapY - 50); // Top pipe
-    ctx.fillRect(pipe.x, pipe.gapY + 50, 50, canvas.height - pipe.gapY - 50); // Bottom pipe
+    // Top pipe
+    ctx.fillRect(pipe.x, 0, 50, pipe.gapY - 50);
+    // Pipe cap
+    ctx.fillStyle = "#3c9349";
+    ctx.fillRect(pipe.x - 5, pipe.gapY - 50, 60, 10);
+    
+    // Bottom pipe
+    ctx.fillStyle = "#58b368";
+    ctx.fillRect(pipe.x, pipe.gapY + 50, 50, canvas.height - pipe.gapY - 50);
+    // Pipe cap
+    ctx.fillStyle = "#3c9349";
+    ctx.fillRect(pipe.x - 5, pipe.gapY + 50, 60, 10);
   });
 
   // Draw score
-  ctx.fillStyle = "black";
-  ctx.font = "20px Arial";
-  ctx.fillText(`Score: ${score}`, 10, 30);
+  ctx.fillStyle = "#fff";
+  ctx.font = "16px 'Press Start 2P'";
+  ctx.fillText(`SCORE: ${score}`, 10, 30);
 
   // Draw game-over message
   if (!bird.alive) {
-    ctx.fillStyle = "red";
-
-    // Draw "Game Over!" with 30px font
-    ctx.font = "30px Arial";
-    const gameOverText = "Game Over!";
+    ctx.fillStyle = "#fff";
+    ctx.font = "24px 'Press Start 2P'";
+    const gameOverText = "GAME OVER";
     const gameOverWidth = ctx.measureText(gameOverText).width;
-    const gameOverX = (canvas.width - gameOverWidth) / 2; // Center horizontally
-    const gameOverY = canvas.height / 2 - 15; // Position slightly above center
+    const gameOverX = (canvas.width - gameOverWidth) / 2;
+    const gameOverY = canvas.height / 2 - 15;
     ctx.fillText(gameOverText, gameOverX, gameOverY);
 
-    // Track bounds for "Game Over!"
-    gameOverBounds = { x: gameOverX, y: gameOverY - 30, width: gameOverWidth, height: 30 };
-
-    // Draw "Click Restart Game" with 24px font
-    ctx.font = "24px Arial";
-    const restartText = "Click Restart Game";
+    ctx.font = "16px 'Press Start 2P'";
+    const restartText = "PRESS RESTART";
     const restartWidth = ctx.measureText(restartText).width;
-    const restartX = (canvas.width - restartWidth) / 2; // Center horizontally
-    const restartY = gameOverY + 30; // Position below "Game Over!"
+    const restartX = (canvas.width - restartWidth) / 2;
+    const restartY = gameOverY + 40;
     ctx.fillText(restartText, restartX, restartY);
-
-    // Track bounds for "Click Restart Game"
-    restartBounds = { x: restartX, y: restartY - 24, width: restartWidth, height: 24 };
   }
 
   requestAnimationFrame(drawGame);
 }
 
-// Start drawing loop
+function resizeCanvas() {
+    const gameContainer = document.getElementById('game');
+    const containerWidth = gameContainer.clientWidth;
+    const containerHeight = gameContainer.clientHeight;
+    const size = Math.min(containerWidth, containerHeight);
+    
+    canvas.width = size;
+    canvas.height = size;
+    
+    // Scale game elements
+    const scale = size / 400;
+    bird.width = Math.floor(24 * scale);
+    bird.height = Math.floor(24 * scale);
+    PIPE_WIDTH = Math.floor(50 * scale);
+    GAP_HEIGHT = Math.floor(100 * scale);
+}
+
+// Add to existing event listeners
+window.addEventListener('load', resizeCanvas);
+window.addEventListener('resize', resizeCanvas);
+window.addEventListener('orientationchange', () => {
+    setTimeout(resizeCanvas, 100);
+});
+
 drawGame();

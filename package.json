@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "express": "^4.21.2",
+    "nes.css": "^2.3.0",
     "socket.io": "^4.8.1"
   },
   "engines": {
