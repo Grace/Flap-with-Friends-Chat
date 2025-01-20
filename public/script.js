@@ -2,7 +2,34 @@ const socket = io();
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-let bird = { x: 50, y: 200, alive: true }; // Bird state
+const BASE_WIDTH = 400;
+const BASE_HEIGHT = 400;
+const BASE_BIRD_SIZE = 24;
+const BASE_PIPE_WIDTH = 50;
+const BASE_GAP_HEIGHT = 100;
+const BASE_BIRD_X = 50;
+const INITIAL_BIRD_X_PERCENT = 0.125; // 12.5% from left
+const INITIAL_BIRD_Y_PERCENT = 0.5;   // 50% from top
+let currentScale = 1;
+
+const GAME_WORLD = {
+    width: 400,  // Virtual world width
+    height: 400, // Virtual world height
+    toScreen: function(coord, dimension = 'width') {
+        return coord / this[dimension] * (dimension === 'width' ? canvas.width : canvas.height);
+    },
+    fromScreen: function(coord, dimension = 'width') {
+        return coord / (dimension === 'width' ? canvas.width : canvas.height) * this[dimension];
+    }
+};
+
+let bird = {
+    xPercent: INITIAL_BIRD_X_PERCENT,
+    yPercent: INITIAL_BIRD_Y_PERCENT,
+    worldWidth: BASE_BIRD_SIZE,
+    worldHeight: BASE_BIRD_SIZE,
+    alive: true
+}; // Bird state
 let pipes = []; // Pipes array
 let score = 0; // Game score
 
@@ -37,9 +64,14 @@ socket.on("chat message", (data) => {
 
 // Receive game state updates
 socket.on("game state", (state) => {
-  bird = state.bird;
-  pipes = state.pipes;
-  score = state.score;
+    bird.alive = state.bird.alive;
+    bird.xPercent = state.bird.x / GAME_WORLD.width;
+    bird.yPercent = state.bird.y / GAME_WORLD.height;
+    pipes = state.pipes.map(pipe => ({
+        x: pipe.x,
+        gapY: pipe.gapY
+    }));
+    score = state.score;
 });
 
 // Update user count
@@ -53,80 +85,122 @@ let restartBounds = null;
 
 // Draw game-over message
 function drawGame() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Draw pixelated bird
-  ctx.fillStyle = bird.alive ? "#ffd33d" : "#666";
-  ctx.fillRect(bird.x, bird.y, 24, 24);
-  // Bird eye
-  ctx.fillStyle = "#000";
-  ctx.fillRect(bird.x + 18, bird.y + 6, 4, 4);
-
-  // Draw pipes with pixel art style
-  ctx.fillStyle = "#58b368";
-  pipes.forEach((pipe) => {
-    // Top pipe
-    ctx.fillRect(pipe.x, 0, 50, pipe.gapY - 50);
-    // Pipe cap
-    ctx.fillStyle = "#3c9349";
-    ctx.fillRect(pipe.x - 5, pipe.gapY - 50, 60, 10);
+    // Draw bird
+    const screenX = GAME_WORLD.toScreen(bird.xPercent * GAME_WORLD.width);
+    const screenY = GAME_WORLD.toScreen(bird.yPercent * GAME_WORLD.height, 'height');
+    const screenWidth = Math.floor(bird.worldWidth * currentScale);
+    const screenHeight = Math.floor(bird.worldHeight * currentScale);
     
-    // Bottom pipe
-    ctx.fillStyle = "#58b368";
-    ctx.fillRect(pipe.x, pipe.gapY + 50, 50, canvas.height - pipe.gapY - 50);
-    // Pipe cap
-    ctx.fillStyle = "#3c9349";
-    ctx.fillRect(pipe.x - 5, pipe.gapY + 50, 60, 10);
-  });
+    ctx.fillStyle = bird.alive ? "#ffd33d" : "#666";
+    ctx.fillRect(screenX, screenY, screenWidth, screenHeight);
+    
+    // Draw bird eye
+    const eyeSize = Math.floor(4 * currentScale);
+    const eyeOffset = Math.floor(6 * currentScale);
+    ctx.fillStyle = "#000";
+    ctx.fillRect(screenX + screenWidth - eyeSize - 2, screenY + eyeOffset, eyeSize, eyeSize);
 
-  // Draw score
-  ctx.fillStyle = "#fff";
-  ctx.font = "16px 'Press Start 2P'";
-  ctx.fillText(`SCORE: ${score}`, 10, 30);
+    // Draw pipes with lids
+    pipes.forEach(pipe => {
+        const screenPipeX = Math.floor(pipe.x * currentScale);
+        const screenPipeY = Math.floor(pipe.gapY * currentScale);
+        const screenPipeWidth = Math.floor(BASE_PIPE_WIDTH * currentScale);
+        const screenGapHeight = Math.floor(BASE_GAP_HEIGHT * currentScale);
+        const lidWidth = Math.floor((BASE_PIPE_WIDTH + 10) * currentScale); // Wider lid
+        const lidHeight = Math.floor(10 * currentScale); // Lid height
+        const lidOffset = Math.floor(5 * currentScale); // Lid overhang
 
-  // Draw game-over message
-  if (!bird.alive) {
+        // Main pipes
+        ctx.fillStyle = "#58b368";
+        // Top pipe
+        ctx.fillRect(screenPipeX, 0, screenPipeWidth, 
+                    screenPipeY - screenGapHeight/2);
+        // Bottom pipe
+        ctx.fillRect(screenPipeX, screenPipeY + screenGapHeight/2,
+                    screenPipeWidth, canvas.height - (screenPipeY + screenGapHeight/2));
+
+        // Pipe lids
+        ctx.fillStyle = "#3c9349"; // Darker green for lids
+        // Top pipe lid
+        ctx.fillRect(screenPipeX - lidOffset, screenPipeY - screenGapHeight/2 - lidHeight,
+                    lidWidth, lidHeight);
+        // Bottom pipe lid
+        ctx.fillRect(screenPipeX - lidOffset, screenPipeY + screenGapHeight/2,
+                    lidWidth, lidHeight);
+    });
+
+    // Draw score
     ctx.fillStyle = "#fff";
-    ctx.font = "24px 'Press Start 2P'";
-    const gameOverText = "GAME OVER";
-    const gameOverWidth = ctx.measureText(gameOverText).width;
-    const gameOverX = (canvas.width - gameOverWidth) / 2;
-    const gameOverY = canvas.height / 2 - 15;
-    ctx.fillText(gameOverText, gameOverX, gameOverY);
+    const fontSize = Math.floor(16 * currentScale);
+    ctx.font = `${fontSize}px 'Press Start 2P'`;
+    ctx.fillText(`SCORE: ${score}`, 10, fontSize * 2);
 
-    ctx.font = "16px 'Press Start 2P'";
-    const restartText = "PRESS RESTART";
-    const restartWidth = ctx.measureText(restartText).width;
-    const restartX = (canvas.width - restartWidth) / 2;
-    const restartY = gameOverY + 40;
-    ctx.fillText(restartText, restartX, restartY);
-  }
+    // Draw game over and restart message
+    if (!bird.alive) {
+        ctx.fillStyle = "#fff";
+        const gameOverSize = Math.floor(24 * currentScale);
+        const restartSize = Math.floor(16 * currentScale);
+        
+        // Game Over text
+        ctx.font = `${gameOverSize}px 'Press Start 2P'`;
+        const gameOverText = "GAME OVER";
+        const gameOverMetrics = ctx.measureText(gameOverText);
+        const gameOverX = (canvas.width - gameOverMetrics.width) / 2;
+        const gameOverY = canvas.height / 2 - gameOverSize;
+        ctx.fillText(gameOverText, gameOverX, gameOverY);
+        
+        // Press Restart text
+        ctx.font = `${restartSize}px 'Press Start 2P'`;
+        const restartText = "PRESS RESTART";
+        const restartMetrics = ctx.measureText(restartText);
+        const restartX = (canvas.width - restartMetrics.width) / 2;
+        const restartY = gameOverY + gameOverSize * 1.5;
+        ctx.fillText(restartText, restartX, restartY);
+    }
 
-  requestAnimationFrame(drawGame);
+    requestAnimationFrame(drawGame);
 }
 
-function resizeCanvas() {
+function updateGameDimensions() {
     const gameContainer = document.getElementById('game');
-    const containerWidth = gameContainer.clientWidth;
-    const containerHeight = gameContainer.clientHeight;
-    const size = Math.min(containerWidth, containerHeight);
+    const size = Math.min(gameContainer.clientWidth, gameContainer.clientHeight);
     
     canvas.width = size;
     canvas.height = size;
+    currentScale = size / GAME_WORLD.width;
+}
+
+function checkCollisions() {
+    const worldY = bird.yPercent * GAME_WORLD.height;
     
-    // Scale game elements
-    const scale = size / 400;
-    bird.width = Math.floor(24 * scale);
-    bird.height = Math.floor(24 * scale);
-    PIPE_WIDTH = Math.floor(50 * scale);
-    GAP_HEIGHT = Math.floor(100 * scale);
+    // Bottom collision using scaled height
+    if (worldY + bird.worldHeight >= GAME_WORLD.height) {
+        bird.alive = false;
+        return;
+    }
+    
+    // Pipe collisions using world coordinates
+    pipes.forEach(pipe => {
+        const worldBirdX = bird.xPercent * GAME_WORLD.width;
+        const worldPipeX = pipe.x;
+        
+        if (worldBirdX + bird.worldWidth > worldPipeX && 
+            worldBirdX < worldPipeX + BASE_PIPE_WIDTH) {
+            if (worldY < pipe.gapY - BASE_GAP_HEIGHT/2 || 
+                worldY + bird.worldHeight > pipe.gapY + BASE_GAP_HEIGHT/2) {
+                bird.alive = false;
+            }
+        }
+    });
 }
 
 // Add to existing event listeners
-window.addEventListener('load', resizeCanvas);
-window.addEventListener('resize', resizeCanvas);
+window.addEventListener('load', updateGameDimensions);
+window.addEventListener('resize', updateGameDimensions);
 window.addEventListener('orientationchange', () => {
-    setTimeout(resizeCanvas, 100);
+    setTimeout(updateGameDimensions, 100);
 });
 
 drawGame();
