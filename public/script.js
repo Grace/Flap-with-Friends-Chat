@@ -46,7 +46,7 @@ const MUSIC = {
     context: null,
     gainNode: null,
     isPlaying: false,
-    tempo: 140, // Increased tempo
+    tempo: 150,  // Faster tempo for lighter feel
     notes: {
         C3: 130.81,
         D3: 146.83,
@@ -62,9 +62,27 @@ const MUSIC = {
         G4: 392.00,
         A4: 440.00,
         B4: 493.88,
-        C5: 523.25
+        C5: 523.25,
+        D5: 587.33,
+        E5: 659.25,
+        F5: 698.46,
+        G5: 783.99
     },
-    noteLength: 150 // Shorter notes for bouncier feel
+    noteLength: 150, // Shorter notes for bouncier feel
+    scheduledLoop: null,
+    activeNodes: [], // Track active oscillators and envelopes
+    cleanup: function() {
+        // Stop all active nodes
+        this.activeNodes.forEach(node => {
+            if (node.stop) node.stop();
+            if (node.disconnect) node.disconnect();
+        });
+        this.activeNodes = [];
+        if (this.scheduledLoop) {
+            clearTimeout(this.scheduledLoop);
+            this.scheduledLoop = null;
+        }
+    }
 };
 
 function initAudio() {
@@ -93,6 +111,18 @@ function playNote(frequency, startTime, duration, type = 'square') {
     oscillator.connect(envelope);
     oscillator.start(startTime);
     oscillator.stop(startTime + duration);
+    
+    // Track active nodes
+    MUSIC.activeNodes.push(oscillator);
+    MUSIC.activeNodes.push(envelope);
+    
+    // Remove nodes after they finish
+    setTimeout(() => {
+        const oscIndex = MUSIC.activeNodes.indexOf(oscillator);
+        const envIndex = MUSIC.activeNodes.indexOf(envelope);
+        if (oscIndex > -1) MUSIC.activeNodes.splice(oscIndex, 1);
+        if (envIndex > -1) MUSIC.activeNodes.splice(envIndex, 1);
+    }, (startTime + duration) * 1000);
 }
 
 function playMelody() {
@@ -101,57 +131,86 @@ function playMelody() {
     const now = MUSIC.context.currentTime;
     const quarterNote = 60 / MUSIC.tempo;
     
-    // Main cheerful melody
+    // Ascending/descending melody patterns for "flying" feel
     const melody = [
-        MUSIC.notes.E4, MUSIC.notes.G4, MUSIC.notes.E4, MUSIC.notes.C4,
-        MUSIC.notes.G4, MUSIC.notes.A4, MUSIC.notes.G4, MUSIC.notes.F4,
-        MUSIC.notes.E4, MUSIC.notes.C4, MUSIC.notes.D4, MUSIC.notes.E4,
-        MUSIC.notes.D4, MUSIC.notes.C4, MUSIC.notes.B3, MUSIC.notes.C4
+        // Soaring intro
+        MUSIC.notes.E4, MUSIC.notes.G4, MUSIC.notes.C5, MUSIC.notes.E5,
+        MUSIC.notes.D5, MUSIC.notes.G4, MUSIC.notes.E4, null,
+        MUSIC.notes.C5, MUSIC.notes.E5, MUSIC.notes.G5, MUSIC.notes.E5,
+        MUSIC.notes.C5, MUSIC.notes.G4, null, null,
+
+        // Floating theme
+        MUSIC.notes.E5, MUSIC.notes.C5, MUSIC.notes.G4, MUSIC.notes.E4,
+        MUSIC.notes.G4, MUSIC.notes.C5, null, MUSIC.notes.E5,
+        MUSIC.notes.D5, MUSIC.notes.B4, MUSIC.notes.G4, null,
+        MUSIC.notes.A4, MUSIC.notes.C5, MUSIC.notes.E5, null,
+
+        // Diving bridge
+        MUSIC.notes.G5, MUSIC.notes.E5, MUSIC.notes.C5, MUSIC.notes.G4,
+        MUSIC.notes.A4, MUSIC.notes.C5, MUSIC.notes.E5, MUSIC.notes.C5,
+        MUSIC.notes.D5, MUSIC.notes.B4, MUSIC.notes.G4, MUSIC.notes.E4,
+        MUSIC.notes.C4, MUSIC.notes.E4, MUSIC.notes.G4, null
     ];
-    
-    // Bouncy arpeggio accompaniment
+
+    // "Fluttering" arpeggios
     const arpeggio = [
-        MUSIC.notes.C4, MUSIC.notes.E4, MUSIC.notes.G4, MUSIC.notes.C5,
-        MUSIC.notes.G4, MUSIC.notes.E4, MUSIC.notes.C4, MUSIC.notes.E4,
-        MUSIC.notes.F3, MUSIC.notes.A3, MUSIC.notes.C4, MUSIC.notes.F4,
-        MUSIC.notes.G3, MUSIC.notes.B3, MUSIC.notes.D4, MUSIC.notes.G4
+        MUSIC.notes.C5, MUSIC.notes.G4, MUSIC.notes.E4, MUSIC.notes.G4,
+        MUSIC.notes.C5, MUSIC.notes.E5, MUSIC.notes.G5, MUSIC.notes.E5,
+        MUSIC.notes.A4, MUSIC.notes.C5, MUSIC.notes.E5, MUSIC.notes.C5,
+        MUSIC.notes.G4, MUSIC.notes.B4, MUSIC.notes.D5, MUSIC.notes.B4
     ];
-    
-    // Bass line
+
+    // Light bass line
     const bass = [
-        MUSIC.notes.C3, MUSIC.notes.G3, MUSIC.notes.F3, MUSIC.notes.G3,
-        MUSIC.notes.C3, MUSIC.notes.E3, MUSIC.notes.F3, MUSIC.notes.G3
+        MUSIC.notes.C3, null, MUSIC.notes.G3, null,
+        MUSIC.notes.E3, null, MUSIC.notes.C4, null,
+        MUSIC.notes.F3, null, MUSIC.notes.D3, null,
+        MUSIC.notes.G3, null, MUSIC.notes.E3, null
     ];
-    
-    // Play main melody with square wave
+
+    // Play melody with softer square wave
     melody.forEach((note, i) => {
-        playNote(note, now + i * quarterNote, quarterNote * 0.8, 'square');
+        if (note) {
+            const env = createNoteEnvelope(now + i * quarterNote, quarterNote * 0.7);
+            env.gain.setValueAtTime(0.2, now + i * quarterNote);
+            playNote(note, now + i * quarterNote, quarterNote * 0.7, 'square');
+        }
     });
-    
-    // Play arpeggios with softer square wave
-    arpeggio.forEach((note, i) => {
-        const envelope = createNoteEnvelope(now + i * quarterNote/2, quarterNote/2);
-        envelope.gain.setValueAtTime(0.05, now + i * quarterNote/2);
-        playNote(note, now + i * quarterNote/2, quarterNote/2, 'square');
-    });
-    
-    // Play bass with triangle wave
+
+    // Play light arpeggios
+    for (let i = 0; i < melody.length/4; i++) {
+        arpeggio.forEach((note, j) => {
+            const env = createNoteEnvelope(now + (i * 16 + j) * quarterNote/2, quarterNote/3);
+            env.gain.setValueAtTime(0.1, now + (i * 16 + j) * quarterNote/2);
+            playNote(note, now + (i * 16 + j) * quarterNote/2, quarterNote/3, 'square');
+        });
+    }
+
+    // Play soft bass
     bass.forEach((note, i) => {
-        playNote(note, now + i * quarterNote * 2, quarterNote * 1.6, 'triangle');
+        if (note) {
+            const env = createNoteEnvelope(now + i * quarterNote * 2, quarterNote * 1.5);
+            env.gain.setValueAtTime(0.15, now + i * quarterNote * 2);
+            playNote(note, now + i * quarterNote * 2, quarterNote * 1.5, 'triangle');
+        }
     });
-    
-    // Schedule next loop
-    setTimeout(() => playMelody(), melody.length * quarterNote * 1000);
+
+    MUSIC.scheduledLoop = setTimeout(() => playMelody(), melody.length * quarterNote * 1000);
 }
 
 function startMusic() {
     if (!MUSIC.context) initAudio();
+    MUSIC.cleanup(); // Clean up any existing playback
     MUSIC.isPlaying = true;
     playMelody();
 }
 
 function stopMusic() {
     MUSIC.isPlaying = false;
+    MUSIC.cleanup();
+    if (MUSIC.context) {
+        MUSIC.context.suspend();
+    }
 }
 
 let isSoundEnabled = true;
@@ -454,8 +513,20 @@ function toggleSound() {
     }
 }
 
-// Add sound event listeners
-document.getElementById('toggleSound').addEventListener('click', toggleSound);
+// Update toggle sound handler
+document.getElementById('toggleSound').addEventListener('click', () => {
+    isSoundEnabled = !isSoundEnabled;
+    document.getElementById('soundIcon').textContent = isSoundEnabled ? '🔊' : '🔇';
+    
+    if (isSoundEnabled) {
+        if (MUSIC.context) {
+            MUSIC.context.resume();
+        }
+        startMusic();
+    } else {
+        stopMusic();
+    }
+});
 
 // Start background music on first interaction
 document.addEventListener('click', () => {
