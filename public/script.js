@@ -33,15 +33,7 @@ const BIRD_PARTS = {
     WING_DOWN_OFFSET: 0.5 // 50% from top of bird
 };
 
-// Add after other constants
-const SOUNDS = {
-    background: document.getElementById('backgroundMusic'),
-    flap: document.getElementById('flapSound'),
-    score: document.getElementById('scoreSound'),
-    gameOver: document.getElementById('gameOverSound')
-};
-
-// Add after other constants
+// Music constants
 const MUSIC = {
     context: null,
     gainNode: null,
@@ -243,6 +235,9 @@ const messages = document.getElementById("messages");
 const userCountDisplay = document.createElement('div');
 document.getElementById('chat').appendChild(userCountDisplay);
 
+// Add at top with other constants
+const scoreDisplay = document.getElementById('score');
+
 // Handle chat messages
 chatForm.addEventListener("submit", (e) => {
   e.preventDefault();
@@ -277,18 +272,10 @@ socket.on("game state", (state) => {
         x: pipe.x,
         gapY: pipe.gapY
     }));
-    // Handle score change
-    if (state.score > score && isSoundEnabled) {
-        SOUNDS.score.currentTime = 0;
-        SOUNDS.score.play();
-    }
     
-    // Handle game over
-    if (state.bird.alive !== bird.alive && !state.bird.alive && isSoundEnabled) {
-        SOUNDS.gameOver.play();
-        SOUNDS.background.pause();
-    }
+    // Update visible score
     score = state.score;
+    scoreDisplay.textContent = `SCORE: ${score}`;
 });
 
 // Update user count
@@ -389,12 +376,6 @@ function drawGame() {
                     lidWidth, lidHeight);
     });
 
-    // Draw score
-    ctx.fillStyle = "#fff";
-    const fontSize = Math.floor(16 * currentScale);
-    ctx.font = `${fontSize}px 'Press Start 2P'`;
-    ctx.fillText(`SCORE: ${score}`, 10, fontSize * 2);
-
     // Draw game over and restart message
     if (!bird.alive) {
         ctx.fillStyle = "#fff";
@@ -493,10 +474,6 @@ window.addEventListener('orientationchange', () => {
 // Add after other event listeners
 document.getElementById("flap").addEventListener("click", (e) => {
     e.preventDefault();
-    if (isSoundEnabled) {
-        SOUNDS.flap.currentTime = 0;
-        SOUNDS.flap.play();
-    }
     socket.emit("chat message", "flap");
 });
 
@@ -505,10 +482,8 @@ function toggleSound() {
     isSoundEnabled = !isSoundEnabled;
     document.getElementById('soundIcon').textContent = isSoundEnabled ? '🔊' : '🔇';
     if (!isSoundEnabled) {
-        SOUNDS.background.pause();
         stopMusic();
     } else {
-        SOUNDS.background.play();
         startMusic();
     }
 }
@@ -530,9 +505,6 @@ document.getElementById('toggleSound').addEventListener('click', () => {
 
 // Start background music on first interaction
 document.addEventListener('click', () => {
-    if (isSoundEnabled && SOUNDS.background.paused) {
-        SOUNDS.background.play();
-    }
     if (isSoundEnabled) startMusic();
 }, { once: true });
 

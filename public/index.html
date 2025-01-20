@@ -7,18 +7,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <link href="https://unpkg.com/nes.css@latest/css/nes.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="styles.css">
-    <audio id="backgroundMusic" loop preload="auto">
-        <source src="sounds/background.mp3" type="audio/mp3">
-    </audio>
-    <audio id="flapSound" preload="auto">
-        <source src="sounds/flap.mp3" type="audio/mp3">
-    </audio>
-    <audio id="scoreSound" preload="auto">
-        <source src="sounds/score.mp3" type="audio/mp3">
-    </audio>
-    <audio id="gameOverSound" preload="auto">
-        <source src="sounds/gameover.mp3" type="audio/mp3">
-    </audio>
 </head>
 <body>
     <main id="container" class="nes-container" role="main">
@@ -27,6 +15,7 @@
         <section id="gameSection" aria-label="Game Area">
             <div id="game" class="nes-container is-dark" role="region" aria-label="Game Canvas">
                 <canvas id="gameCanvas" aria-label="Flappy Bird Game" role="img"></canvas>
+                <div id="score" class="game-score" aria-live="polite">SCORE: 0</div>
                 <div id="gameStatus" class="sr-only" aria-live="polite" aria-atomic="true">
                     Game ready to start. Current score: 0
                 </div>
@@ -56,14 +45,12 @@
                         id="flap" 
                         class="nes-btn is-primary" 
                         aria-label="Flap Wings to move bird upward"
-                    >Flap Wings</button>
+                    >Flap!</button>
                     <button 
                         id="restart" 
                         class="nes-btn is-error" 
                         aria-label="Restart Game"
-                    >Restart Game</button>
-                </div>
-                <div class="button-group" role="group" aria-label="Sound Controls">
+                    >Restart</button>
                     <button 
                         id="toggleSound" 
                         class="nes-btn" 
@@ -74,23 +61,13 @@
                 </div>
             </div>
         </section>
+
+        <footer class="copyright" role="contentinfo">
+            <a href="https://github.com/Grace/flappy-bird-with-friends" class="nes-text" target="_blank" rel="noopener noreferrer">
+                Made with ♥ by Grace
+            </a>
+        </footer>
     </main>
-
-    <!-- Add screen reader styles -->
-    <style>
-        .sr-only {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
-            overflow: hidden;
-            clip: rect(0, 0, 0, 0);
-            white-space: nowrap;
-            border: 0;
-        }
-    </style>
-
     <script src="/socket.io/socket.io.js"></script>
     <script src="script.js"></script>
 </body>

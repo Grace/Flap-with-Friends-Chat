@@ -13,9 +13,9 @@ Send the link below to friends to have them join the game.
 Demo: https://flap-with-friends-chat-production.up.railway.app/
 
 ## Extra Goals:
-- [ ] Make mobile friendly
-- [ ] Add pixel art
-- [ ] Add game music
-- [ ] Add sound effects
-- [ ] Improve UI/UX
+- [x] Make mobile friendly
+- [x] Add pixel art
+- [x] Add game music
+- [ ] Add game over sound
+- [x] Improve UI/UX
 - [ ] Increase horizontal acceleration over time
