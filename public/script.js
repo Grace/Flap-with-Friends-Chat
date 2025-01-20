@@ -295,6 +295,12 @@ window.addEventListener('orientationchange', () => {
     setTimeout(updateGameDimensions, 100);
 });
 
+// Add after other event listeners
+document.getElementById("flap").addEventListener("click", (e) => {
+    e.preventDefault();
+    socket.emit("chat message", "up");
+});
+
 drawGame();
 
 function focusInput() {

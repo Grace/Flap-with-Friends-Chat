@@ -6,6 +6,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
+// Single shared state for all clients
 let bird = { x: 50, y: 200, velocity: 0, alive: true }; // Bird state
 let pipes = []; // Pipes array
 let score = 0; // Game score
@@ -31,7 +32,7 @@ function resetGame() {
 }
 resetGame();
 
-// Game loop: Update game state every 50ms
+// Game loop: Update game state every 50ms. Single game loop for all clients.
 setInterval(() => {
   if (!bird.alive) return;
 
@@ -68,7 +69,7 @@ setInterval(() => {
     bird.alive = false;
   }
 
-  // Emit updated game state
+  // Emit updated game state to ALL connected clients
   io.emit("game state", { bird, pipes, score });
 }, 50);
 

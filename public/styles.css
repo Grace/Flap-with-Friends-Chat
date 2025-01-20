@@ -93,6 +93,16 @@ canvas {
   padding: 0.5rem;
 }
 
+.button-group {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.5rem;
+}
+
+.button-group .nes-btn {
+    flex: 1;
+}
+
 @media (max-width: 768px) {
   #container {
     grid-template-columns: 1fr;
