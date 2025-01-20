@@ -255,7 +255,7 @@ document.getElementById("restart").addEventListener("click", () => {
 
 // Display chat messages with usernames
 socket.on("chat message", (data) => {
-  if(!data.message === "flap") {
+  if(data.message != "flap") {
     const item = document.createElement("div");
     item.textContent = `${data.username}: ${data.message}`;
     messages.appendChild(item);
@@ -295,7 +295,7 @@ function updateWingState() {
     }
 }
 
-// Draw game-over message
+// Draw the game
 function drawGame() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -347,34 +347,36 @@ function drawGame() {
         eyeSize
     );
 
-    // Draw pipes with lids
+    // Draw pipes
     pipes.forEach(pipe => {
-        const screenPipeX = Math.floor(pipe.x * currentScale);
-        const screenPipeY = Math.floor(pipe.gapY * currentScale);
-        const screenPipeWidth = Math.floor(BASE_PIPE_WIDTH * currentScale);
-        const screenGapHeight = Math.floor(BASE_GAP_HEIGHT * currentScale);
-        const lidWidth = Math.floor((BASE_PIPE_WIDTH + 10) * currentScale); // Wider lid
-        const lidHeight = Math.floor(10 * currentScale); // Lid height
-        const lidOffset = Math.floor(5 * currentScale); // Lid overhang
-
-        // Main pipes
-        ctx.fillStyle = "#58b368";
-        // Top pipe
-        ctx.fillRect(screenPipeX, 0, screenPipeWidth, 
-                    screenPipeY - screenGapHeight/2);
-        // Bottom pipe
-        ctx.fillRect(screenPipeX, screenPipeY + screenGapHeight/2,
-                    screenPipeWidth, canvas.height - (screenPipeY + screenGapHeight/2));
-
-        // Pipe lids
-        ctx.fillStyle = "#3c9349"; // Darker green for lids
-        // Top pipe lid
-        ctx.fillRect(screenPipeX - lidOffset, screenPipeY - screenGapHeight/2 - lidHeight,
-                    lidWidth, lidHeight);
-        // Bottom pipe lid
-        ctx.fillRect(screenPipeX - lidOffset, screenPipeY + screenGapHeight/2,
-                    lidWidth, lidHeight);
-    });
+      const pipeX = GAME_WORLD.toScreen(pipe.x);
+      const gapY = GAME_WORLD.toScreen(pipe.gapY, 'height');
+      const pipeWidth = GAME_WORLD.toScreen(BASE_PIPE_WIDTH);
+      const gapHeight = GAME_WORLD.toScreen(BASE_GAP_HEIGHT, 'height');
+      
+      ctx.fillStyle = "#58b368";
+      
+      // Top pipe - extend from top edge to gap
+      const topPipeHeight = gapY - gapHeight/2;
+      ctx.fillRect(pipeX, 0, pipeWidth, topPipeHeight);
+      
+      // Bottom pipe - extend from gap to bottom edge
+      const bottomPipeY = gapY + gapHeight/2;
+      const bottomPipeHeight = canvas.height - bottomPipeY;
+      ctx.fillRect(pipeX, bottomPipeY, pipeWidth, bottomPipeHeight);
+      
+      // Draw lids
+      ctx.fillStyle = "#3c9349";
+      const lidWidth = pipeWidth * 1.2;
+      const lidHeight = pipeWidth * 0.2;
+      const lidOffset = (lidWidth - pipeWidth) / 2;
+      
+      // Top lid
+      ctx.fillRect(pipeX - lidOffset, topPipeHeight - lidHeight, lidWidth, lidHeight);
+      
+      // Bottom lid
+      ctx.fillRect(pipeX - lidOffset, bottomPipeY, lidWidth, lidHeight);
+  });
 
     // Draw game over and restart message
     if (!bird.alive) {
@@ -464,7 +466,7 @@ function handleCanvasClick(event) {
 // Add canvas click listener
 canvas.addEventListener('click', handleCanvasClick);
 
-// Add to existing event listeners
+// Add load, resize, and orientation change event listeners
 window.addEventListener('load', updateGameDimensions);
 window.addEventListener('resize', updateGameDimensions);
 window.addEventListener('orientationchange', () => {
