@@ -23,6 +23,16 @@ const GAME_WORLD = {
     }
 };
 
+const BIRD_PARTS = {
+    BEAK_WIDTH: 8,
+    BEAK_HEIGHT: 6,
+    WING_WIDTH: 12,
+    WING_HEIGHT: 8,
+    FLAP_INTERVAL: 1000,  // Changed from 2000 to 1000ms
+    WING_UP_OFFSET: 0.25, // 25% from top of bird
+    WING_DOWN_OFFSET: 0.5 // 50% from top of bird
+};
+
 let bird = {
     xPercent: INITIAL_BIRD_X_PERCENT,
     yPercent: INITIAL_BIRD_Y_PERCENT,
@@ -32,6 +42,17 @@ let bird = {
 }; // Bird state
 let pipes = []; // Pipes array
 let score = 0; // Game score
+
+let wingUp = false;
+let lastFlapTime = Date.now();
+
+// Add after other state variables
+let restartTextBounds = {
+    x: 0,
+    y: 0,
+    width: 0,
+    height: 0
+};
 
 // Chat input form
 const chatForm = document.getElementById("chatForm");
@@ -52,6 +73,7 @@ chatForm.addEventListener("submit", (e) => {
 // Handle game restart
 document.getElementById("restart").addEventListener("click", () => {
   socket.emit("restart");
+  focusInput();
 });
 
 // Display chat messages with usernames
@@ -83,24 +105,65 @@ socket.on("user count", (count) => {
 let gameOverBounds = null;
 let restartBounds = null;
 
+function updateWingState() {
+    const currentTime = Date.now();
+    if (currentTime - lastFlapTime > BIRD_PARTS.FLAP_INTERVAL) {
+        wingUp = !wingUp;
+        lastFlapTime = currentTime;
+    }
+}
+
 // Draw game-over message
 function drawGame() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw bird
+    updateWingState();
+
+    // Draw bird body
     const screenX = GAME_WORLD.toScreen(bird.xPercent * GAME_WORLD.width);
     const screenY = GAME_WORLD.toScreen(bird.yPercent * GAME_WORLD.height, 'height');
     const screenWidth = Math.floor(bird.worldWidth * currentScale);
     const screenHeight = Math.floor(bird.worldHeight * currentScale);
     
+    // Main body
     ctx.fillStyle = bird.alive ? "#ffd33d" : "#666";
     ctx.fillRect(screenX, screenY, screenWidth, screenHeight);
     
-    // Draw bird eye
-    const eyeSize = Math.floor(4 * currentScale);
-    const eyeOffset = Math.floor(6 * currentScale);
+    // Beak
+    ctx.fillStyle = "#ff9933";
+    const beakWidth = Math.floor(BIRD_PARTS.BEAK_WIDTH * currentScale);
+    const beakHeight = Math.floor(BIRD_PARTS.BEAK_HEIGHT * currentScale);
+    ctx.fillRect(
+        screenX + screenWidth - beakWidth/2,
+        screenY + screenHeight/2 - beakHeight/2,
+        beakWidth,
+        beakHeight
+    );
+    
+    // Wing
+    ctx.fillStyle = "#e6b800";
+    const wingWidth = Math.floor(BIRD_PARTS.WING_WIDTH * currentScale);
+    const wingHeight = Math.floor(BIRD_PARTS.WING_HEIGHT * currentScale);
+    const wingY = wingUp ? 
+        screenY + screenHeight * BIRD_PARTS.WING_UP_OFFSET : 
+        screenY + screenHeight * BIRD_PARTS.WING_DOWN_OFFSET;
+    
+    ctx.fillRect(
+        screenX + screenWidth/4,
+        wingY,
+        wingWidth,
+        wingHeight
+    );
+    
+    // Eye
     ctx.fillStyle = "#000";
-    ctx.fillRect(screenX + screenWidth - eyeSize - 2, screenY + eyeOffset, eyeSize, eyeSize);
+    const eyeSize = Math.floor(4 * currentScale);
+    ctx.fillRect(
+        screenX + screenWidth - eyeSize * 2,
+        screenY + screenHeight/3,
+        eyeSize,
+        eyeSize
+    );
 
     // Draw pipes with lids
     pipes.forEach(pipe => {
@@ -151,12 +214,21 @@ function drawGame() {
         const gameOverY = canvas.height / 2 - gameOverSize;
         ctx.fillText(gameOverText, gameOverX, gameOverY);
         
-        // Press Restart text
+        // Press To Restart text
         ctx.font = `${restartSize}px 'Press Start 2P'`;
-        const restartText = "PRESS RESTART";
+        const restartText = "PRESS TO RESTART";
         const restartMetrics = ctx.measureText(restartText);
         const restartX = (canvas.width - restartMetrics.width) / 2;
         const restartY = gameOverY + gameOverSize * 1.5;
+        
+        // Save restart text bounds for click detection
+        restartTextBounds = {
+            x: restartX,
+            y: restartY,
+            width: restartMetrics.width,
+            height: restartSize
+        };
+        
         ctx.fillText(restartText, restartX, restartY);
     }
 
@@ -196,6 +268,26 @@ function checkCollisions() {
     });
 }
 
+// Add new click handler function
+function handleCanvasClick(event) {
+    if (!bird.alive) {
+        const rect = canvas.getBoundingClientRect();
+        const clickX = event.clientX - rect.left;
+        const clickY = event.clientY - rect.top;
+        
+        if (clickX >= restartTextBounds.x &&
+            clickX <= restartTextBounds.x + restartTextBounds.width &&
+            clickY >= restartTextBounds.y - restartTextBounds.height &&
+            clickY <= restartTextBounds.y) {
+            socket.emit("restart");
+            focusInput();
+        }
+    }
+}
+
+// Add canvas click listener
+canvas.addEventListener('click', handleCanvasClick);
+
 // Add to existing event listeners
 window.addEventListener('load', updateGameDimensions);
 window.addEventListener('resize', updateGameDimensions);
@@ -204,3 +296,9 @@ window.addEventListener('orientationchange', () => {
 });
 
 drawGame();
+
+function focusInput() {
+    setTimeout(() => {
+        document.getElementById('input').focus();
+    }, 100);
+}
