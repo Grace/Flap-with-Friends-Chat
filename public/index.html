@@ -3,32 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Flappy Bird with Friends</title>
+    <title>Flappy Bird with Friends - Multiplayer Game</title>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <link href="https://unpkg.com/nes.css@latest/css/nes.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div id="container" class="nes-container">
-        <div id="gameSection">
-            <div id="game" class="nes-container is-dark">
-                <canvas id="gameCanvas"></canvas>
-            </div>
-        </div>
-        <div id="chatSection">
-            <div id="chat" class="nes-container">
-                <div id="messages" class="nes-container"></div>
-                <form id="chatForm">
-                    <input id="input" class="nes-input" autocomplete="off" placeholder="Type 'up' or 'u'!">
-                    <button class="nes-btn is-primary">Send</button>
-                </form>
-                <div class="button-group">
-                    <button id="flap" class="nes-btn is-primary">Flap Wings</button>
-                    <button id="restart" class="nes-btn is-error">Restart Game</button>
+    <main id="container" class="nes-container" role="main">
+        <h1 class="sr-only">Flappy Bird with Friends</h1>
+        
+        <section id="gameSection" aria-label="Game Area">
+            <div id="game" class="nes-container is-dark" role="region" aria-label="Game Canvas">
+                <canvas id="gameCanvas" aria-label="Flappy Bird Game" role="img"></canvas>
+                <div id="gameStatus" class="sr-only" aria-live="polite" aria-atomic="true">
+                    Game ready to start. Current score: 0
                 </div>
             </div>
-        </div>
-    </div>
+        </section>
+
+        <section id="chatSection" aria-label="Chat and Controls">
+            <div id="chat" class="nes-container">
+                <h2 class="sr-only">Chat Messages and Game Controls</h2>
+                
+                <div id="messages" class="nes-container" role="log" aria-label="Chat Messages" aria-live="polite"></div>
+                
+                <form id="chatForm" aria-label="Chat Input">
+                    <label for="input" class="sr-only">Chat message - Type 'flap' to make bird flap</label>
+                    <input 
+                        id="input" 
+                        class="nes-input" 
+                        autocomplete="off" 
+                        placeholder="Type &quot;flap&quot;!"
+                        aria-label="Chat input - Type flap to make bird flap"
+                    >
+                    <button class="nes-btn is-primary" aria-label="Send message">Send</button>
+                </form>
+
+                <div class="button-group" role="group" aria-label="Game Controls">
+                    <button 
+                        id="flap" 
+                        class="nes-btn is-primary" 
+                        aria-label="Flap Wings to move bird upward"
+                    >Flap Wings</button>
+                    <button 
+                        id="restart" 
+                        class="nes-btn is-error" 
+                        aria-label="Restart Game"
+                    >Restart Game</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Add screen reader styles -->
+    <style>
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+    </style>
+
     <script src="/socket.io/socket.io.js"></script>
     <script src="script.js"></script>
 </body>

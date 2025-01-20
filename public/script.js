@@ -78,10 +78,12 @@ document.getElementById("restart").addEventListener("click", () => {
 
 // Display chat messages with usernames
 socket.on("chat message", (data) => {
-  const item = document.createElement("div");
-  item.textContent = `${data.username}: ${data.message}`;
-  messages.appendChild(item);
-  messages.scrollTop = messages.scrollHeight; // Auto-scroll to bottom
+  if(!data.message === "flap") {
+    const item = document.createElement("div");
+    item.textContent = `${data.username}: ${data.message}`;
+    messages.appendChild(item);
+    messages.scrollTop = messages.scrollHeight; // Auto-scroll to bottom
+  }
 });
 
 // Receive game state updates
@@ -298,7 +300,7 @@ window.addEventListener('orientationchange', () => {
 // Add after other event listeners
 document.getElementById("flap").addEventListener("click", (e) => {
     e.preventDefault();
-    socket.emit("chat message", "up");
+    socket.emit("chat message", "flap");
 });
 
 drawGame();
