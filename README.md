@@ -35,8 +35,8 @@ This project reimagines the original Flappy Bird as a collaborative, multiplayer
 - **Multiplayer gameplay:** Collaborate with friends in real-time.
 - **Mobile-friendly design:** Play seamlessly on any device.
 - **Pixel art:** Retro-inspired visuals for a nostalgic gaming vibe.
-- **Dynamic soundtrack:** Enjoy music while you play (game over sound coming soon!).
-- **UI/UX Improvements:** An intuitive and engaging interface.
+- **Retro soundtrack:** Enjoy music while you play.
+- **UI/UX Improvements:** A challenging but charming user interface.
 
 ---
 
