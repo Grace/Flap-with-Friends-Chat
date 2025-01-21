@@ -1,13 +1,11 @@
 # Flappy Bird with Friends
-One day, I asked myself, 'How can I make Flappy Bird more chaotic?'
 
-The result is a silly, multiplayer Flappy Bird clone where players control the bird using chat commands.
+A collaborative take on Flappy Bird, where a team controls the bird via a chatroom. Designed to be hilariously challenging and foster teamwork through chaos.
 
 ![image](https://github.com/user-attachments/assets/a8f3028c-12a1-486f-8c44-89713672ef5e)
 
 # How to Play
-Press "Restart Game" when the page loads and type "u" or "up" to make the bird go up higher.
-Send the link below to friends to have them join the game!
+When the page loads, click "Restart Game" and press Flap! to make the bird fly higher. Share the link below with your friends so they can join the fun!
 
 Demo: [https://flap-with-friends-chat-production.up.railway.app/](https://flappy-bird-with-friends.up.railway.app)
 
