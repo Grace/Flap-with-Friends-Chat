@@ -371,11 +371,13 @@ function drawGame() {
 
     // Draw game over and restart message
     if (!bird.alive) {
-        ctx.fillStyle = "#fff";
+        // Set up text sizes
         const gameOverSize = Math.floor(24 * currentScale);
         const restartSize = Math.floor(16 * currentScale);
+        const warningSize = Math.floor(restartSize * 0.6);
         
-        // Game Over text
+        // Draw Game Over text
+        ctx.fillStyle = "#fff";
         ctx.font = `${gameOverSize}px 'Press Start 2P'`;
         const gameOverText = "GAME OVER";
         const gameOverMetrics = ctx.measureText(gameOverText);
@@ -383,22 +385,30 @@ function drawGame() {
         const gameOverY = canvas.height / 2 - gameOverSize;
         ctx.fillText(gameOverText, gameOverX, gameOverY);
         
-        // Press To Restart text
+        // Draw Press To Restart text
         ctx.font = `${restartSize}px 'Press Start 2P'`;
         const restartText = "PRESS TO RESTART";
         const restartMetrics = ctx.measureText(restartText);
         const restartX = (canvas.width - restartMetrics.width) / 2;
-        const restartY = gameOverY + gameOverSize * 1.5;
+        const restartY = gameOverY + gameOverSize * 1.2;
+        ctx.fillText(restartText, restartX, restartY);
         
-        // Save restart text bounds for click detection
+        // Draw Warning text
+        ctx.fillStyle = "#666";
+        ctx.font = `${warningSize}px 'Press Start 2P'`;
+        const warningText = "Unless you have carpal tunnel";
+        const warningMetrics = ctx.measureText(warningText);
+        const warningX = (canvas.width - warningMetrics.width) / 2;
+        const warningY = restartY + restartSize * 1.2;
+        ctx.fillText(warningText, warningX, warningY);
+        
+        // Save restart bounds for click detection
         restartTextBounds = {
             x: restartX,
             y: restartY,
             width: restartMetrics.width,
             height: restartSize
         };
-        
-        ctx.fillText(restartText, restartX, restartY);
     }
 
     requestAnimationFrame(drawGame);
