@@ -2,14 +2,9 @@ const socket = io();
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-const BASE_WIDTH = 400;
-const BASE_HEIGHT = 400;
-const BASE_BIRD_SIZE = 24;
 const BASE_PIPE_WIDTH = 50;
 const BASE_GAP_HEIGHT = 100;
-const BASE_BIRD_X = 50;
-const INITIAL_BIRD_X_PERCENT = 0.125; // 12.5% from left
-const INITIAL_BIRD_Y_PERCENT = 0.5;   // 50% from top
+
 let currentScale = 1;
 
 const GAME_WORLD = {
@@ -17,9 +12,6 @@ const GAME_WORLD = {
     height: 400, // Virtual world height
     toScreen: function(coord, dimension = 'width') {
         return coord / this[dimension] * (dimension === 'width' ? canvas.width : canvas.height);
-    },
-    fromScreen: function(coord, dimension = 'width') {
-        return coord / (dimension === 'width' ? canvas.width : canvas.height) * this[dimension];
     }
 };
 
@@ -207,14 +199,17 @@ function stopMusic() {
 
 let isSoundEnabled = true;
 
+// Bird state
 let bird = {
-    xPercent: INITIAL_BIRD_X_PERCENT,
-    yPercent: INITIAL_BIRD_Y_PERCENT,
-    worldWidth: BASE_BIRD_SIZE,
-    worldHeight: BASE_BIRD_SIZE,
+    xPercent: 0.125, // 12.5% from left 
+    yPercent: 0.5, // 50% from top
+    birdWidth: 24,
+    birdHeight: 24,
     alive: true
-}; // Bird state
+};
+
 let pipes = []; // Pipes array
+
 let score = 0; // Game score
 
 let wingUp = false;
@@ -283,10 +278,6 @@ socket.on("user count", (count) => {
   userCountDisplay.textContent = `Users online: ${count}`;
 });
 
-// Track the bounds of the "Game Over!" and "Click Restart Game" texts
-let gameOverBounds = null;
-let restartBounds = null;
-
 function updateWingState() {
     const currentTime = Date.now();
     if (currentTime - lastFlapTime > BIRD_PARTS.FLAP_INTERVAL) {
@@ -304,8 +295,8 @@ function drawGame() {
     // Draw bird body
     const screenX = GAME_WORLD.toScreen(bird.xPercent * GAME_WORLD.width);
     const screenY = GAME_WORLD.toScreen(bird.yPercent * GAME_WORLD.height, 'height');
-    const screenWidth = Math.floor(bird.worldWidth * currentScale);
-    const screenHeight = Math.floor(bird.worldHeight * currentScale);
+    const screenWidth = Math.floor(bird.birdWidth * currentScale);
+    const screenHeight = Math.floor(bird.birdHeight * currentScale);
     
     // Main body
     ctx.fillStyle = bird.alive ? "#ffd33d" : "#666";
@@ -422,30 +413,6 @@ function updateGameDimensions() {
     currentScale = size / GAME_WORLD.width;
 }
 
-function checkCollisions() {
-    const worldY = bird.yPercent * GAME_WORLD.height;
-    
-    // Bottom collision using scaled height
-    if (worldY + bird.worldHeight >= GAME_WORLD.height) {
-        bird.alive = false;
-        return;
-    }
-    
-    // Pipe collisions using world coordinates
-    pipes.forEach(pipe => {
-        const worldBirdX = bird.xPercent * GAME_WORLD.width;
-        const worldPipeX = pipe.x;
-        
-        if (worldBirdX + bird.worldWidth > worldPipeX && 
-            worldBirdX < worldPipeX + BASE_PIPE_WIDTH) {
-            if (worldY < pipe.gapY - BASE_GAP_HEIGHT/2 || 
-                worldY + bird.worldHeight > pipe.gapY + BASE_GAP_HEIGHT/2) {
-                bird.alive = false;
-            }
-        }
-    });
-}
-
 // Add new click handler function
 function handleCanvasClick(event) {
     if (!bird.alive) {
@@ -479,17 +446,6 @@ document.getElementById("flap").addEventListener("click", (e) => {
     socket.emit("chat message", "flap");
 });
 
-// Add sound control functions
-function toggleSound() {
-    isSoundEnabled = !isSoundEnabled;
-    document.getElementById('soundIcon').textContent = isSoundEnabled ? '🔊' : '🔇';
-    if (!isSoundEnabled) {
-        stopMusic();
-    } else {
-        startMusic();
-    }
-}
-
 // Update toggle sound handler
 document.getElementById('toggleSound').addEventListener('click', () => {
     isSoundEnabled = !isSoundEnabled;
@@ -509,6 +465,7 @@ document.getElementById('toggleSound').addEventListener('click', () => {
 document.addEventListener('click', () => {
     if (isSoundEnabled) startMusic();
 }, { once: true });
+
 
 drawGame();
 
