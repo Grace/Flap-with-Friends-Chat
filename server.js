@@ -99,7 +99,7 @@ io.on("connection", (socket) => {
     io.emit("chat message", { username, message: msg });
 
     // Handle 'up' or 'u' for bird control
-    if (bird.alive && (msg === "flap")) {
+    if (bird.alive && (msg === "flap" || msg === "up" || msg === "u")) {
       bird.velocity = -10; // Bird flaps upward
     }
   });
