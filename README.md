@@ -14,6 +14,7 @@ Demo: https://flap-with-friends-chat-production.up.railway.app/
 
 ## Extra Goals:
 - [x] Make mobile friendly
+- [ ] Fix pipe length when window dimensions are < 400px width and < 810px height
 - [x] Add pixel art
 - [x] Add game music
 - [ ] Add game over sound
