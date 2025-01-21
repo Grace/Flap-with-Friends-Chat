@@ -14,11 +14,21 @@ let users = 0; // Track the number of connected users
 
 // Function to generate a random username
 function generateUsername() {
-  const adjectives = ["Speedy", "Fluffy", "Mighty", "Clever", "Bouncy"];
-  const animals = ["Falcon", "Rabbit", "Tiger", "Penguin", "Monkey"];
+  const adjectives = [
+    "Speedy", "Fluffy", "Mighty", "Clever", 
+    "Bouncy", "Silly", "Happy", "Jolly",
+    "Swift", "Soaring", "Graceful", "Feathered", 
+    "Gliding", "Nimble", "Majestic", "Aerial"
+  ];
+  const birds = [
+    "Falcon", "Chicken", "Owl", "Penguin", 
+    "Finch", "Emu", "Duck", "Goose",
+    "Sparrow", "Eagle", "Hawk", "Dove", 
+    "Raven", "Heron", "Cardinal", "Pigeon"
+  ];
   const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)];
-  const randomAnimal = animals[Math.floor(Math.random() * animals.length)];
-  return `${randomAdjective} ${randomAnimal}`;
+  const randomBird = animals[Math.floor(Math.random() * animals.length)];
+  return `${randomAdjective} ${randomBird}`;
 }
 
 // Initialize the game
