@@ -27,7 +27,7 @@ function generateUsername() {
     "Raven", "Heron", "Cardinal", "Pigeon"
   ];
   const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)];
-  const randomBird = animals[Math.floor(Math.random() * animals.length)];
+  const randomBird = birds[Math.floor(Math.random() * birds.length)];
   return `${randomAdjective} ${randomBird}`;
 }
 
