@@ -7,7 +7,7 @@ The result is a silly, multiplayer Flappy Bird clone where players control the b
 
 # How to Play
 Press "Restart Game" when the page loads and type "u" or "up" to make the bird go up higher.
-Send the link below to friends to have them join the game.
+Send the link below to friends to have them join the game!
 
 Demo: [https://flap-with-friends-chat-production.up.railway.app/](https://flappy-bird-with-friends.up.railway.app)
 
