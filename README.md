@@ -7,7 +7,7 @@ A collaborative take on Flappy Bird, where a team controls the bird via a chatro
 # How to Play
 When the page loads, click "Restart Game" and press Flap! to make the bird fly higher. Share the link below with your friends so they can join the fun!
 
-Demo: [https://flap-with-friends-chat-production.up.railway.app/](https://flappy-bird-with-friends.up.railway.app)
+Link to Game Demo: [https://flap-with-friends-chat-production.up.railway.app/](https://flappy-bird-with-friends.up.railway.app)
 
 ## Extra Goals:
 - [x] Make mobile friendly
