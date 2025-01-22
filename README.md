@@ -51,6 +51,7 @@ Here's what we're working on next:
 - [ ] Add a "Game Over" sound effect.
 - [x] Enhance UI/UX.
 - [ ] Introduce increasing horizontal acceleration over time.
+- [ ] Make less impossible on mobile by adding tap to flap and disabling text input auto focus on smaller screens
 
 ---
 
