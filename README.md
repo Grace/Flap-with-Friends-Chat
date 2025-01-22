@@ -42,8 +42,6 @@ This project reimagines the original Flappy Bird as a collaborative, multiplayer
 
 ## 🛠️ Extra Goals
 
-Here's what we're working on next:
-
 - [x] Make mobile-friendly adjustments.
 - [ ] Fix pipe dimensions for screens smaller than 400px width and 810px height.
 - [x] Add pixel art.
@@ -68,7 +66,7 @@ To contribute:
 
 ## 📧 Feedback & Support
 
-Have ideas, questions, or feedback? Open an [issue](https://github.com/your-repo/issues) or reach out to us directly. We'd love to hear from you!
+Have ideas, questions, or feedback? Open an [issue](https://github.com/your-repo/issues)
 
 ---
 
