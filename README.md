@@ -70,10 +70,4 @@ Have ideas, questions, or feedback? Open an [issue](https://github.com/your-repo
 
 ---
 
-## ❤️ Acknowledgments
-
-This project is inspired by the original **Flappy Bird** game, with a creative multiplayer twist. Thank you to everyone who has contributed, tested, and shared their ideas to make this project better.
-
----
-
 Let the chaos (and fun) begin! 🐦✨
