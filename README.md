@@ -57,7 +57,7 @@ Here's what we're working on next:
 
 ## 🤝 Contributing
 
-We welcome contributions! Whether it's fixing a bug, improving gameplay mechanics, or adding new features, your help is appreciated. 
+Contributions encouraged! Whether it's fixing a bug, improving gameplay mechanics, or adding new features, your help is appreciated. 
 
 To contribute:
 1. Fork the repository.
