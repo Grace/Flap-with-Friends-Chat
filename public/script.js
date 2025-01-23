@@ -1,62 +1,62 @@
-const socket = io();
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
-
-const BASE_PIPE_WIDTH = 50;
-const BASE_GAP_HEIGHT = 100;
-
-let currentScale = 1;
-
-const GAME_WORLD = {
-    width: 400,  // Virtual world width
-    height: 400, // Virtual world height
-    toScreen: function(coord, dimension = 'width') {
-        return coord / this[dimension] * (dimension === 'width' ? canvas.width : canvas.height);
+const CONFIG = {
+    GAME: {
+        WIDTH: 400,
+        HEIGHT: 400,
+        PIPE_WIDTH: 50,
+        GAP_HEIGHT: 100
+    },
+    BIRD: {
+        WIDTH: 24,
+        HEIGHT: 24,
+        BEAK_WIDTH: 8,
+        BEAK_HEIGHT: 6,
+        WING_WIDTH: 12,
+        WING_HEIGHT: 8,
+        FLAP_INTERVAL: 1000,
+        WING_UP_OFFSET: 0.25,
+        WING_DOWN_OFFSET: 0.5
     }
 };
 
-const BIRD_PARTS = {
-    BEAK_WIDTH: 8,
-    BEAK_HEIGHT: 6,
-    WING_WIDTH: 12,
-    WING_HEIGHT: 8,
-    FLAP_INTERVAL: 1000,  // Changed from 2000 to 1000ms
-    WING_UP_OFFSET: 0.25, // 25% from top of bird
-    WING_DOWN_OFFSET: 0.5 // 50% from top of bird
-};
+class Bird {
+    constructor() {
+        this.xPercent = 0.125;
+        this.yPercent = 0.5;
+        this.width = CONFIG.BIRD.WIDTH;
+        this.height = CONFIG.BIRD.HEIGHT;
+        this.alive = true;
+        this.wingUp = false;
+        this.lastFlapTime = Date.now();
+    }
 
-// Music constants
-const MUSIC = {
-    context: null,
-    gainNode: null,
-    isPlaying: false,
-    tempo: 150,  // Faster tempo for lighter feel
-    notes: {
-        C3: 130.81,
-        D3: 146.83,
-        E3: 164.81,
-        F3: 174.61,
-        G3: 196.00,
-        A3: 220.00,
-        B3: 246.94,
-        C4: 261.63,
-        D4: 293.66,
-        E4: 329.63,
-        F4: 349.23,
-        G4: 392.00,
-        A4: 440.00,
-        B4: 493.88,
-        C5: 523.25,
-        D5: 587.33,
-        E5: 659.25,
-        F5: 698.46,
-        G5: 783.99
-    },
-    noteLength: 150, // Shorter notes for bouncier feel
-    scheduledLoop: null,
-    activeNodes: [], // Track active oscillators and envelopes
-    cleanup: function() {
-        // Stop all active nodes
+    updateWingState() {
+        const currentTime = Date.now();
+        if (currentTime - this.lastFlapTime > CONFIG.BIRD.FLAP_INTERVAL) {
+            this.wingUp = !this.wingUp;
+            this.lastFlapTime = currentTime;
+        }
+    }
+}
+
+class AudioManager {
+    constructor() {
+        this.context = null;
+        this.gainNode = null;
+        this.isPlaying = false;
+        this.activeNodes = [];
+        this.scheduledLoop = null;
+        this.enabled = true;
+        this.initAudio();
+    }
+
+    initAudio() {
+        this.context = new (window.AudioContext || window.webkitAudioContext)();
+        this.gainNode = this.context.createGain();
+        this.gainNode.gain.value = 0.1;
+        this.gainNode.connect(this.context.destination);
+    }
+
+    cleanup() {
         this.activeNodes.forEach(node => {
             if (node.stop) node.stop();
             if (node.disconnect) node.disconnect();
@@ -67,420 +67,367 @@ const MUSIC = {
             this.scheduledLoop = null;
         }
     }
-};
 
-function initAudio() {
-    MUSIC.context = new (window.AudioContext || window.webkitAudioContext)();
-    MUSIC.gainNode = MUSIC.context.createGain();
-    MUSIC.gainNode.gain.value = 0.1; // Set volume
-    MUSIC.gainNode.connect(MUSIC.context.destination);
-}
+    createNoteEnvelope(startTime, duration) {
+        const envelope = this.context.createGain();
+        envelope.connect(this.gainNode);
+        envelope.gain.setValueAtTime(0, startTime);
+        envelope.gain.linearRampToValueAtTime(0.3, startTime + 0.01);
+        envelope.gain.linearRampToValueAtTime(0.2, startTime + duration * 0.3);
+        envelope.gain.linearRampToValueAtTime(0, startTime + duration);
+        return envelope;
+    }
 
-function createNoteEnvelope(startTime, duration) {
-    const envelope = MUSIC.context.createGain();
-    envelope.connect(MUSIC.gainNode);
-    envelope.gain.setValueAtTime(0, startTime);
-    envelope.gain.linearRampToValueAtTime(0.3, startTime + 0.01);
-    envelope.gain.linearRampToValueAtTime(0.2, startTime + duration * 0.3);
-    envelope.gain.linearRampToValueAtTime(0, startTime + duration);
-    return envelope;
-}
+    playNote(frequency, startTime, duration, type = 'square') {
+        const oscillator = this.context.createOscillator();
+        const envelope = this.createNoteEnvelope(startTime, duration);
+        
+        oscillator.type = type;
+        oscillator.frequency.value = frequency;
+        oscillator.connect(envelope);
+        oscillator.start(startTime);
+        oscillator.stop(startTime + duration);
+        
+        this.activeNodes.push(oscillator);
+        this.activeNodes.push(envelope);
+        
+        setTimeout(() => {
+            const oscIndex = this.activeNodes.indexOf(oscillator);
+            const envIndex = this.activeNodes.indexOf(envelope);
+            if (oscIndex > -1) this.activeNodes.splice(oscIndex, 1);
+            if (envIndex > -1) this.activeNodes.splice(envIndex, 1);
+        }, (startTime + duration) * 1000);
+    }
 
-function playNote(frequency, startTime, duration, type = 'square') {
-    const oscillator = MUSIC.context.createOscillator();
-    const envelope = createNoteEnvelope(startTime, duration);
-    
-    oscillator.type = type;
-    oscillator.frequency.value = frequency;
-    oscillator.connect(envelope);
-    oscillator.start(startTime);
-    oscillator.stop(startTime + duration);
-    
-    // Track active nodes
-    MUSIC.activeNodes.push(oscillator);
-    MUSIC.activeNodes.push(envelope);
-    
-    // Remove nodes after they finish
-    setTimeout(() => {
-        const oscIndex = MUSIC.activeNodes.indexOf(oscillator);
-        const envIndex = MUSIC.activeNodes.indexOf(envelope);
-        if (oscIndex > -1) MUSIC.activeNodes.splice(oscIndex, 1);
-        if (envIndex > -1) MUSIC.activeNodes.splice(envIndex, 1);
-    }, (startTime + duration) * 1000);
-}
+    playMelody() {
+        if (!this.isPlaying) return;
+        
+        const now = this.context.currentTime;
+        const quarterNote = 60 / 150;
+        
+        const melody = [
+            329.63, 392.00, 523.25, 659.25,
+            587.33, 392.00, 329.63, null,
+            523.25, 659.25, 783.99, 659.25,
+            523.25, 392.00, null, null,
+            659.25, 523.25, 392.00, 329.63,
+            392.00, 523.25, null, 659.25,
+            587.33, 493.88, 392.00, null,
+            440.00, 523.25, 659.25, null,
+            783.99, 659.25, 523.25, 392.00,
+            440.00, 523.25, 659.25, 523.25,
+            587.33, 493.88, 392.00, 329.63,
+            261.63, 329.63, 392.00, null
+        ];
 
-function playMelody() {
-    if (!MUSIC.isPlaying) return;
-    
-    const now = MUSIC.context.currentTime;
-    const quarterNote = 60 / MUSIC.tempo;
-    
-    // Ascending/descending melody patterns for "flying" feel
-    const melody = [
-        // Soaring intro
-        MUSIC.notes.E4, MUSIC.notes.G4, MUSIC.notes.C5, MUSIC.notes.E5,
-        MUSIC.notes.D5, MUSIC.notes.G4, MUSIC.notes.E4, null,
-        MUSIC.notes.C5, MUSIC.notes.E5, MUSIC.notes.G5, MUSIC.notes.E5,
-        MUSIC.notes.C5, MUSIC.notes.G4, null, null,
+        const arpeggio = [
+            523.25, 392.00, 329.63, 392.00,
+            523.25, 659.25, 783.99, 659.25,
+            440.00, 523.25, 659.25, 523.25,
+            392.00, 493.88, 587.33, 493.88
+        ];
 
-        // Floating theme
-        MUSIC.notes.E5, MUSIC.notes.C5, MUSIC.notes.G4, MUSIC.notes.E4,
-        MUSIC.notes.G4, MUSIC.notes.C5, null, MUSIC.notes.E5,
-        MUSIC.notes.D5, MUSIC.notes.B4, MUSIC.notes.G4, null,
-        MUSIC.notes.A4, MUSIC.notes.C5, MUSIC.notes.E5, null,
+        const bass = [
+            130.81, null, 196.00, null,
+            164.81, null, 261.63, null,
+            174.61, null, 146.83, null,
+            196.00, null, 164.81, null
+        ];
 
-        // Diving bridge
-        MUSIC.notes.G5, MUSIC.notes.E5, MUSIC.notes.C5, MUSIC.notes.G4,
-        MUSIC.notes.A4, MUSIC.notes.C5, MUSIC.notes.E5, MUSIC.notes.C5,
-        MUSIC.notes.D5, MUSIC.notes.B4, MUSIC.notes.G4, MUSIC.notes.E4,
-        MUSIC.notes.C4, MUSIC.notes.E4, MUSIC.notes.G4, null
-    ];
+        melody.forEach((note, i) => {
+            if (note) {
+                const env = this.createNoteEnvelope(now + i * quarterNote, quarterNote * 0.7);
+                env.gain.setValueAtTime(0.2, now + i * quarterNote);
+                this.playNote(note, now + i * quarterNote, quarterNote * 0.7, 'square');
+            }
+        });
 
-    // "Fluttering" arpeggios
-    const arpeggio = [
-        MUSIC.notes.C5, MUSIC.notes.G4, MUSIC.notes.E4, MUSIC.notes.G4,
-        MUSIC.notes.C5, MUSIC.notes.E5, MUSIC.notes.G5, MUSIC.notes.E5,
-        MUSIC.notes.A4, MUSIC.notes.C5, MUSIC.notes.E5, MUSIC.notes.C5,
-        MUSIC.notes.G4, MUSIC.notes.B4, MUSIC.notes.D5, MUSIC.notes.B4
-    ];
-
-    // Light bass line
-    const bass = [
-        MUSIC.notes.C3, null, MUSIC.notes.G3, null,
-        MUSIC.notes.E3, null, MUSIC.notes.C4, null,
-        MUSIC.notes.F3, null, MUSIC.notes.D3, null,
-        MUSIC.notes.G3, null, MUSIC.notes.E3, null
-    ];
-
-    // Play melody with softer square wave
-    melody.forEach((note, i) => {
-        if (note) {
-            const env = createNoteEnvelope(now + i * quarterNote, quarterNote * 0.7);
-            env.gain.setValueAtTime(0.2, now + i * quarterNote);
-            playNote(note, now + i * quarterNote, quarterNote * 0.7, 'square');
+        for (let i = 0; i < melody.length/4; i++) {
+            arpeggio.forEach((note, j) => {
+                const env = this.createNoteEnvelope(now + (i * 16 + j) * quarterNote/2, quarterNote/3);
+                env.gain.setValueAtTime(0.1, now + (i * 16 + j) * quarterNote/2);
+                this.playNote(note, now + (i * 16 + j) * quarterNote/2, quarterNote/3, 'square');
+            });
         }
-    });
 
-    // Play light arpeggios
-    for (let i = 0; i < melody.length/4; i++) {
-        arpeggio.forEach((note, j) => {
-            const env = createNoteEnvelope(now + (i * 16 + j) * quarterNote/2, quarterNote/3);
-            env.gain.setValueAtTime(0.1, now + (i * 16 + j) * quarterNote/2);
-            playNote(note, now + (i * 16 + j) * quarterNote/2, quarterNote/3, 'square');
+        bass.forEach((note, i) => {
+            if (note) {
+                const env = this.createNoteEnvelope(now + i * quarterNote * 2, quarterNote * 1.5);
+                env.gain.setValueAtTime(0.15, now + i * quarterNote * 2);
+                this.playNote(note, now + i * quarterNote * 2, quarterNote * 1.5, 'triangle');
+            }
+        });
+
+        this.scheduledLoop = setTimeout(() => this.playMelody(), melody.length * quarterNote * 1000);
+    }
+
+    startMusic() {
+        if (!this.context) this.initAudio();
+        this.cleanup();
+        this.isPlaying = true;
+        this.playMelody();
+    }
+
+    stopMusic() {
+        this.isPlaying = false;
+        this.cleanup();
+        if (this.context) {
+            this.context.suspend();
+        }
+    }
+}
+
+class Renderer {
+    constructor(canvas, game) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d');
+        this.game = game;
+        this.currentScale = 1;
+    }
+
+    updateDimensions() {
+        const gameContainer = document.getElementById('game');
+        const size = Math.min(gameContainer.clientWidth, gameContainer.clientHeight);
+        this.canvas.width = size;
+        this.canvas.height = size;
+        this.currentScale = size / CONFIG.GAME.WIDTH;
+    }
+
+    draw() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        this.game.bird.updateWingState();
+
+        const screenX = this.toScreen(this.game.bird.xPercent * CONFIG.GAME.WIDTH);
+        const screenY = this.toScreen(this.game.bird.yPercent * CONFIG.GAME.HEIGHT, 'height');
+        const screenWidth = Math.floor(this.game.bird.width * this.currentScale);
+        const screenHeight = Math.floor(this.game.bird.height * this.currentScale);
+        
+        this.ctx.fillStyle = this.game.bird.alive ? "#ffd33d" : "#666";
+        this.ctx.fillRect(screenX, screenY, screenWidth, screenHeight);
+        
+        this.ctx.fillStyle = "#ff9933";
+        const beakWidth = Math.floor(CONFIG.BIRD.BEAK_WIDTH * this.currentScale);
+        const beakHeight = Math.floor(CONFIG.BIRD.BEAK_HEIGHT * this.currentScale);
+        this.ctx.fillRect(
+            screenX + screenWidth - beakWidth/2,
+            screenY + screenHeight/2 - beakHeight/2,
+            beakWidth,
+            beakHeight
+        );
+        
+        this.ctx.fillStyle = "#e6b800";
+        const wingWidth = Math.floor(CONFIG.BIRD.WING_WIDTH * this.currentScale);
+        const wingHeight = Math.floor(CONFIG.BIRD.WING_HEIGHT * this.currentScale);
+        const wingY = this.game.bird.wingUp ? 
+            screenY + screenHeight * CONFIG.BIRD.WING_UP_OFFSET : 
+            screenY + screenHeight * CONFIG.BIRD.WING_DOWN_OFFSET;
+        
+        this.ctx.fillRect(
+            screenX + screenWidth/4,
+            wingY,
+            wingWidth,
+            wingHeight
+        );
+        
+        this.ctx.fillStyle = "#000";
+        const eyeSize = Math.floor(4 * this.currentScale);
+        this.ctx.fillRect(
+            screenX + screenWidth - eyeSize * 2,
+            screenY + screenHeight/3,
+            eyeSize,
+            eyeSize
+        );
+
+        this.game.pipes.forEach(pipe => {
+            const pipeX = this.toScreen(pipe.x);
+            const gapY = this.toScreen(pipe.gapY, 'height');
+            const pipeWidth = this.toScreen(CONFIG.GAME.PIPE_WIDTH);
+            const gapHeight = this.toScreen(CONFIG.GAME.GAP_HEIGHT, 'height');
+            
+            this.ctx.fillStyle = "#58b368";
+            
+            const topPipeHeight = gapY - gapHeight/2;
+            this.ctx.fillRect(pipeX, 0, pipeWidth, topPipeHeight);
+            
+            const bottomPipeY = gapY + gapHeight/2;
+            const bottomPipeHeight = this.canvas.height - bottomPipeY;
+            this.ctx.fillRect(pipeX, bottomPipeY, pipeWidth, bottomPipeHeight);
+            
+            this.ctx.fillStyle = "#3c9349";
+            const lidWidth = pipeWidth * 1.2;
+            const lidHeight = pipeWidth * 0.2;
+            const lidOffset = (lidWidth - pipeWidth) / 2;
+            
+            this.ctx.fillRect(pipeX - lidOffset, topPipeHeight - lidHeight, lidWidth, lidHeight);
+            this.ctx.fillRect(pipeX - lidOffset, bottomPipeY, lidWidth, lidHeight);
+        });
+
+        if (!this.game.bird.alive) {
+            const gameOverSize = Math.floor(24 * this.currentScale);
+            const restartSize = Math.floor(16 * this.currentScale);
+            const warningSize = Math.floor(restartSize * 0.6);
+            
+            this.ctx.fillStyle = "#fff";
+            this.ctx.font = `${gameOverSize}px 'Press Start 2P'`;
+            const gameOverText = "GAME OVER";
+            const gameOverMetrics = this.ctx.measureText(gameOverText);
+            const gameOverX = (this.canvas.width - gameOverMetrics.width) / 2;
+            const gameOverY = this.canvas.height / 2 - gameOverSize;
+            this.ctx.fillText(gameOverText, gameOverX, gameOverY);
+            
+            this.ctx.font = `${restartSize}px 'Press Start 2P'`;
+            const restartText = "PRESS TO RESTART";
+            const restartMetrics = this.ctx.measureText(restartText);
+            const restartX = (this.canvas.width - restartMetrics.width) / 2;
+            const restartY = gameOverY + gameOverSize * 1.2;
+            this.ctx.fillText(restartText, restartX, restartY);
+            
+            this.ctx.fillStyle = "#666";
+            this.ctx.font = `${warningSize}px 'Press Start 2P'`;
+            const warningText = "Unless you have carpal tunnel";
+            const warningMetrics = this.ctx.measureText(warningText);
+            const warningX = (this.canvas.width - warningMetrics.width) / 2;
+            const warningY = restartY + restartSize * 1.2;
+            this.ctx.fillText(warningText, warningX, warningY);
+            
+            this.game.restartTextBounds = {
+                x: restartX,
+                y: restartY,
+                width: restartMetrics.width,
+                height: restartSize
+            };
+        }
+    }
+
+    toScreen(coord, dimension = 'width') {
+        return coord / CONFIG.GAME[dimension.toUpperCase()] * (dimension === 'width' ? this.canvas.width : this.canvas.height);
+    }
+}
+
+class Game {
+    constructor() {
+        this.canvas = document.getElementById('gameCanvas');
+        this.bird = new Bird();
+        this.pipes = [];
+        this.score = 0;
+        this.audio = new AudioManager();
+        this.renderer = new Renderer(this.canvas, this);
+        this.socket = io();
+        this.setupEventListeners();
+    }
+
+    setupEventListeners() {
+        window.addEventListener('load', () => this.renderer.updateDimensions());
+        window.addEventListener('resize', () => this.renderer.updateDimensions());
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => this.renderer.updateDimensions(), 100);
+        });
+
+        this.canvas.addEventListener('click', (event) => this.handleCanvasClick(event));
+
+        document.getElementById("flap").addEventListener("click", (e) => {
+            e.preventDefault();
+            this.socket.emit("chat message", "flap");
+        });
+
+        document.getElementById('toggleSound').addEventListener('click', () => {
+            this.audio.enabled = !this.audio.enabled;
+            document.getElementById('soundIcon').textContent = this.audio.enabled ? '🔊' : '🔇';
+            
+            if (this.audio.enabled) {
+                if (this.audio.context) {
+                    this.audio.context.resume();
+                }
+                this.audio.startMusic();
+            } else {
+                this.audio.stopMusic();
+            }
+        });
+
+        document.addEventListener('click', () => {
+            if (this.audio.enabled) this.audio.startMusic();
+        }, { once: true });
+
+        const chatForm = document.getElementById("chatForm");
+        const input = document.getElementById("input");
+        const messages = document.getElementById("messages");
+        const userCountDisplay = document.createElement('div');
+        document.getElementById('chat').appendChild(userCountDisplay);
+
+        chatForm.addEventListener("submit", (e) => {
+            e.preventDefault();
+            if (input.value) {
+                this.socket.emit("chat message", input.value);
+                input.value = "";
+            }
+        });
+
+        document.getElementById("restart").addEventListener("click", () => {
+            this.socket.emit("restart");
+            this.focusInput();
+        });
+
+        this.socket.on("chat message", (data) => {
+            if(data.message != "flap") {
+                const item = document.createElement("div");
+                item.textContent = `${data.username}: ${data.message}`;
+                messages.appendChild(item);
+                messages.scrollTop = messages.scrollHeight;
+            }
+        });
+
+        this.socket.on("game state", (state) => {
+            this.bird.alive = state.bird.alive;
+            this.bird.xPercent = state.bird.x / CONFIG.GAME.WIDTH;
+            this.bird.yPercent = state.bird.y / CONFIG.GAME.HEIGHT;
+            this.pipes = state.pipes.map(pipe => ({
+                x: pipe.x,
+                gapY: pipe.gapY
+            }));
+            
+            this.score = state.score;
+            document.getElementById('score').textContent = `SCORE: ${this.score}`;
+        });
+
+        this.socket.on("user count", (count) => {
+            userCountDisplay.textContent = `Users online: ${count}`;
         });
     }
 
-    // Play soft bass
-    bass.forEach((note, i) => {
-        if (note) {
-            const env = createNoteEnvelope(now + i * quarterNote * 2, quarterNote * 1.5);
-            env.gain.setValueAtTime(0.15, now + i * quarterNote * 2);
-            playNote(note, now + i * quarterNote * 2, quarterNote * 1.5, 'triangle');
-        }
-    });
-
-    MUSIC.scheduledLoop = setTimeout(() => playMelody(), melody.length * quarterNote * 1000);
-}
-
-function startMusic() {
-    if (!MUSIC.context) initAudio();
-    MUSIC.cleanup(); // Clean up any existing playback
-    MUSIC.isPlaying = true;
-    playMelody();
-}
-
-function stopMusic() {
-    MUSIC.isPlaying = false;
-    MUSIC.cleanup();
-    if (MUSIC.context) {
-        MUSIC.context.suspend();
-    }
-}
-
-let isSoundEnabled = true;
-
-// Bird state
-let bird = {
-    xPercent: 0.125, // 12.5% from left 
-    yPercent: 0.5, // 50% from top
-    birdWidth: 24,
-    birdHeight: 24,
-    alive: true
-};
-
-let pipes = []; // Pipes array
-
-let score = 0; // Game score
-
-let wingUp = false;
-let lastFlapTime = Date.now();
-
-// Add after other state variables
-let restartTextBounds = {
-    x: 0,
-    y: 0,
-    width: 0,
-    height: 0
-};
-
-// Chat input form
-const chatForm = document.getElementById("chatForm");
-const input = document.getElementById("input");
-const messages = document.getElementById("messages");
-const userCountDisplay = document.createElement('div');
-document.getElementById('chat').appendChild(userCountDisplay);
-
-// Add at top with other constants
-const scoreDisplay = document.getElementById('score');
-
-// Handle chat messages
-chatForm.addEventListener("submit", (e) => {
-  e.preventDefault();
-  if (input.value) {
-    socket.emit("chat message", input.value);
-    input.value = "";
-  }
-});
-
-// Handle game restart
-document.getElementById("restart").addEventListener("click", () => {
-  socket.emit("restart");
-  focusInput();
-});
-
-// Display chat messages with usernames
-socket.on("chat message", (data) => {
-  if(data.message != "flap") {
-    const item = document.createElement("div");
-    item.textContent = `${data.username}: ${data.message}`;
-    messages.appendChild(item);
-    messages.scrollTop = messages.scrollHeight; // Auto-scroll to bottom
-  }
-});
-
-// Receive game state updates
-socket.on("game state", (state) => {
-    bird.alive = state.bird.alive;
-    bird.xPercent = state.bird.x / GAME_WORLD.width;
-    bird.yPercent = state.bird.y / GAME_WORLD.height;
-    pipes = state.pipes.map(pipe => ({
-        x: pipe.x,
-        gapY: pipe.gapY
-    }));
-    
-    // Update visible score
-    score = state.score;
-    scoreDisplay.textContent = `SCORE: ${score}`;
-});
-
-// Update user count
-socket.on("user count", (count) => {
-  userCountDisplay.textContent = `Users online: ${count}`;
-});
-
-function updateWingState() {
-    const currentTime = Date.now();
-    if (currentTime - lastFlapTime > BIRD_PARTS.FLAP_INTERVAL) {
-        wingUp = !wingUp;
-        lastFlapTime = currentTime;
-    }
-}
-
-// Draw the game
-function drawGame() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    updateWingState();
-
-    // Draw bird body
-    const screenX = GAME_WORLD.toScreen(bird.xPercent * GAME_WORLD.width);
-    const screenY = GAME_WORLD.toScreen(bird.yPercent * GAME_WORLD.height, 'height');
-    const screenWidth = Math.floor(bird.birdWidth * currentScale);
-    const screenHeight = Math.floor(bird.birdHeight * currentScale);
-    
-    // Main body
-    ctx.fillStyle = bird.alive ? "#ffd33d" : "#666";
-    ctx.fillRect(screenX, screenY, screenWidth, screenHeight);
-    
-    // Beak
-    ctx.fillStyle = "#ff9933";
-    const beakWidth = Math.floor(BIRD_PARTS.BEAK_WIDTH * currentScale);
-    const beakHeight = Math.floor(BIRD_PARTS.BEAK_HEIGHT * currentScale);
-    ctx.fillRect(
-        screenX + screenWidth - beakWidth/2,
-        screenY + screenHeight/2 - beakHeight/2,
-        beakWidth,
-        beakHeight
-    );
-    
-    // Wing
-    ctx.fillStyle = "#e6b800";
-    const wingWidth = Math.floor(BIRD_PARTS.WING_WIDTH * currentScale);
-    const wingHeight = Math.floor(BIRD_PARTS.WING_HEIGHT * currentScale);
-    const wingY = wingUp ? 
-        screenY + screenHeight * BIRD_PARTS.WING_UP_OFFSET : 
-        screenY + screenHeight * BIRD_PARTS.WING_DOWN_OFFSET;
-    
-    ctx.fillRect(
-        screenX + screenWidth/4,
-        wingY,
-        wingWidth,
-        wingHeight
-    );
-    
-    // Eye
-    ctx.fillStyle = "#000";
-    const eyeSize = Math.floor(4 * currentScale);
-    ctx.fillRect(
-        screenX + screenWidth - eyeSize * 2,
-        screenY + screenHeight/3,
-        eyeSize,
-        eyeSize
-    );
-
-    // Draw pipes
-    pipes.forEach(pipe => {
-      const pipeX = GAME_WORLD.toScreen(pipe.x);
-      const gapY = GAME_WORLD.toScreen(pipe.gapY, 'height');
-      const pipeWidth = GAME_WORLD.toScreen(BASE_PIPE_WIDTH);
-      const gapHeight = GAME_WORLD.toScreen(BASE_GAP_HEIGHT, 'height');
-      
-      ctx.fillStyle = "#58b368";
-      
-      // Top pipe - extend from top edge to gap
-      const topPipeHeight = gapY - gapHeight/2;
-      ctx.fillRect(pipeX, 0, pipeWidth, topPipeHeight);
-      
-      // Bottom pipe - extend from gap to bottom edge
-      const bottomPipeY = gapY + gapHeight/2;
-      const bottomPipeHeight = canvas.height - bottomPipeY;
-      ctx.fillRect(pipeX, bottomPipeY, pipeWidth, bottomPipeHeight);
-      
-      // Draw lids
-      ctx.fillStyle = "#3c9349";
-      const lidWidth = pipeWidth * 1.2;
-      const lidHeight = pipeWidth * 0.2;
-      const lidOffset = (lidWidth - pipeWidth) / 2;
-      
-      // Top lid
-      ctx.fillRect(pipeX - lidOffset, topPipeHeight - lidHeight, lidWidth, lidHeight);
-      
-      // Bottom lid
-      ctx.fillRect(pipeX - lidOffset, bottomPipeY, lidWidth, lidHeight);
-  });
-
-    // Draw game over and restart message
-    if (!bird.alive) {
-        // Set up text sizes
-        const gameOverSize = Math.floor(24 * currentScale);
-        const restartSize = Math.floor(16 * currentScale);
-        const warningSize = Math.floor(restartSize * 0.6);
-        
-        // Draw Game Over text
-        ctx.fillStyle = "#fff";
-        ctx.font = `${gameOverSize}px 'Press Start 2P'`;
-        const gameOverText = "GAME OVER";
-        const gameOverMetrics = ctx.measureText(gameOverText);
-        const gameOverX = (canvas.width - gameOverMetrics.width) / 2;
-        const gameOverY = canvas.height / 2 - gameOverSize;
-        ctx.fillText(gameOverText, gameOverX, gameOverY);
-        
-        // Draw Press To Restart text
-        ctx.font = `${restartSize}px 'Press Start 2P'`;
-        const restartText = "PRESS TO RESTART";
-        const restartMetrics = ctx.measureText(restartText);
-        const restartX = (canvas.width - restartMetrics.width) / 2;
-        const restartY = gameOverY + gameOverSize * 1.2;
-        ctx.fillText(restartText, restartX, restartY);
-        
-        // Draw Warning text
-        ctx.fillStyle = "#666";
-        ctx.font = `${warningSize}px 'Press Start 2P'`;
-        const warningText = "Unless you have carpal tunnel";
-        const warningMetrics = ctx.measureText(warningText);
-        const warningX = (canvas.width - warningMetrics.width) / 2;
-        const warningY = restartY + restartSize * 1.2;
-        ctx.fillText(warningText, warningX, warningY);
-        
-        // Save restart bounds for click detection
-        restartTextBounds = {
-            x: restartX,
-            y: restartY,
-            width: restartMetrics.width,
-            height: restartSize
-        };
-    }
-
-    requestAnimationFrame(drawGame);
-}
-
-function updateGameDimensions() {
-    const gameContainer = document.getElementById('game');
-    const size = Math.min(gameContainer.clientWidth, gameContainer.clientHeight);
-    
-    canvas.width = size;
-    canvas.height = size;
-    currentScale = size / GAME_WORLD.width;
-}
-
-// Add new click handler function
-function handleCanvasClick(event) {
-    if (!bird.alive) {
-        const rect = canvas.getBoundingClientRect();
-        const clickX = event.clientX - rect.left;
-        const clickY = event.clientY - rect.top;
-        
-        if (clickX >= restartTextBounds.x &&
-            clickX <= restartTextBounds.x + restartTextBounds.width &&
-            clickY >= restartTextBounds.y - restartTextBounds.height &&
-            clickY <= restartTextBounds.y) {
-            socket.emit("restart");
-            focusInput();
+    handleCanvasClick(event) {
+        if (!this.bird.alive) {
+            const rect = this.canvas.getBoundingClientRect();
+            const clickX = event.clientX - rect.left;
+            const clickY = event.clientY - rect.top;
+            
+            if (clickX >= this.restartTextBounds.x &&
+                clickX <= this.restartTextBounds.x + this.restartTextBounds.width &&
+                clickY >= this.restartTextBounds.y - this.restartTextBounds.height &&
+                clickY <= this.restartTextBounds.y) {
+                this.socket.emit("restart");
+                this.focusInput();
+            }
         }
     }
-}
 
-// Add canvas click listener
-canvas.addEventListener('click', handleCanvasClick);
-
-// Add load, resize, and orientation change event listeners
-window.addEventListener('load', updateGameDimensions);
-window.addEventListener('resize', updateGameDimensions);
-window.addEventListener('orientationchange', () => {
-    setTimeout(updateGameDimensions, 100);
-});
-
-// Add after other event listeners
-document.getElementById("flap").addEventListener("click", (e) => {
-    e.preventDefault();
-    socket.emit("chat message", "flap");
-});
-
-// Update toggle sound handler
-document.getElementById('toggleSound').addEventListener('click', () => {
-    isSoundEnabled = !isSoundEnabled;
-    document.getElementById('soundIcon').textContent = isSoundEnabled ? '🔊' : '🔇';
-    
-    if (isSoundEnabled) {
-        if (MUSIC.context) {
-            MUSIC.context.resume();
-        }
-        startMusic();
-    } else {
-        stopMusic();
+    start() {
+        this.renderer.updateDimensions();
+        this.gameLoop();
     }
-});
 
-// Start background music on first interaction
-document.addEventListener('click', () => {
-    if (isSoundEnabled) startMusic();
-}, { once: true });
+    gameLoop() {
+        this.bird.updateWingState();
+        this.renderer.draw();
+        requestAnimationFrame(() => this.gameLoop());
+    }
 
-
-drawGame();
-
-function focusInput() {
-    setTimeout(() => {
-        document.getElementById('input').focus();
-    }, 100);
+    focusInput() {
+        setTimeout(() => {
+            document.getElementById('input').focus();
+        }, 100);
+    }
 }
+
+const game = new Game();
+game.start();
