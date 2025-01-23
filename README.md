@@ -28,7 +28,7 @@ This project reimagines the original Flappy Bird as a collaborative, multiplayer
 4. Share the game link with your friends so they can join the fun.
 5. Work together through the chatroom to keep the bird alive and conquer the obstacles.
 
-Requires a browser that supports WebKit. Not yet mobile friendly, tap to fly coming soon
+Requires a browser that supports WebKit. Not yet mobile friendly, tap to flap coming soon
 
 ---
 
