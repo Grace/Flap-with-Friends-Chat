@@ -71,3 +71,5 @@ Have ideas, questions, or feedback? Open an [issue](https://github.com/your-repo
 ---
 
 Let the chaos (and fun) begin! 🐦✨
+
+[<img src="https://cdn.buymeacoffee.com/buttons/v2/default-green.png" width="237" height="77">](https://buymeacoffee.com/gracefulcode)
