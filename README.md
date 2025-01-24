@@ -4,9 +4,9 @@ Welcome to **Flappy Bird with Friends**—a hilarious, multiplayer twist on the 
 
 ---
 
-## 🚀 Game Demo
+## 🚀 Playing the Game
 
-**Play Now:** [Flappy Bird with Friends](https://flappy-bird-with-friends.up.railway.app)
+**Link to play:** [Flappy Bird with Friends](https://flappy-bird-with-friends.up.railway.app)
 
 ⚠️ **Note:** If you experience a disconnection or error, refresh the page and try again in a minute. The app may sleep during periods of low traffic.
 
