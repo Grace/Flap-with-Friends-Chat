@@ -75,3 +75,11 @@ Have ideas, questions, or feedback? Open an [issue](https://github.com/your-repo
 Let the chaos (and fun) begin! 🐦✨
 
 [<img src="https://cdn.buymeacoffee.com/buttons/v2/default-green.png" width="237" height="77">](https://buymeacoffee.com/gracefulcode)
+
+---
+
+## Acknowledgments
+
+- This project was inspired by the original [Flappy Bird](https://en.wikipedia.org/wiki/Flappy_Bird) game created by **Dong Nguyen** and published by [dotGEARS](https://dotgears.com/).  
+- Special thanks to Dong Nguyen for creating such a fun and iconic game that has inspired developers worldwide.
+
