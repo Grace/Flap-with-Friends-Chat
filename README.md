@@ -12,8 +12,6 @@ Welcome to **Flappy Bird with Friends**—a hilarious, multiplayer twist on the 
 4. Share the game link with your friends so they can join the fun.
 5. Work together through the chatroom to keep the bird alive and conquer the obstacles.
 
-Requires a browser that supports WebKit. Not yet mobile friendly, tap to flap coming soon.
-
 ---
 
 ![Flappy Bird Gameplay Screenshot](https://github.com/user-attachments/assets/a8f3028c-12a1-486f-8c44-89713672ef5e)
