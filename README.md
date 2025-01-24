@@ -12,10 +12,6 @@ Welcome to **Flappy Bird with Friends**—a hilarious, multiplayer twist on the 
 
 ---
 
-## 📖 About the Game
-
-This project reimagines the original Flappy Bird as a collaborative, multiplayer experience. Instead of one player controlling the bird, a team of players sends commands through a chatroom to navigate the bird past pipes. Chaos is guaranteed!
-
 ![Flappy Bird Gameplay Screenshot](https://github.com/user-attachments/assets/a8f3028c-12a1-486f-8c44-89713672ef5e)
 
 ---
