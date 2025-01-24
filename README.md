@@ -6,7 +6,7 @@ Welcome to **Flappy Bird with Friends**—a hilarious, multiplayer twist on the 
 
 ## 🚀 Playing the Game
 
-**Link to play:** [Flappy Bird with Friends](https://flappy-bird-with-friends.up.railway.app)
+**Click link to open in browser:** [Flappy Bird with Friends](https://flappy-bird-with-friends.up.railway.app)
 
 ⚠️ **Note:** If you experience a disconnection or error, refresh the page and try again in a minute. The app may sleep during periods of low traffic.
 
