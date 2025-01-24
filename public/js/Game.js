@@ -63,7 +63,6 @@ export class Game {
 
         document.getElementById("restart").addEventListener("click", () => {
             this.socket.emit("restart");
-            this.focusInput();
         });
 
         this.socket.on("chat message", (data) => {
@@ -104,7 +103,6 @@ export class Game {
                 clickY >= this.restartTextBounds.y - this.restartTextBounds.height &&
                 clickY <= this.restartTextBounds.y) {
                 this.socket.emit("restart");
-                this.focusInput();
             }
         }
     }
@@ -120,9 +118,4 @@ export class Game {
         requestAnimationFrame(() => this.gameLoop());
     }
 
-    focusInput() {
-        setTimeout(() => {
-            document.getElementById('input').focus();
-        }, 100);
-    }
 }
